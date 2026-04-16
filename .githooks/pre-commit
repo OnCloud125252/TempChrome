@@ -6,7 +6,7 @@
 # on the raycast extension. Auto-fixes from lint are re-staged.
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TOTAL_STEPS=3
+TOTAL_STEPS=4
 
 # Colors
 _CLI_RED='\033[0;31m'
@@ -131,6 +131,31 @@ check_raycast_lint() {
   (cd raycast && bun run lint:fix)
 }
 
+check_raycast_schema_sync() {
+  # `prelint:fix` already ran `bun run sync:options` inside step 3, so
+  # raycast/package.json's launch.preferences block is now up to date in
+  # the working tree. If it differs from the staged version, the user
+  # edited src/options/schema.ts without staging the regenerated
+  # package.json — fail fast so drift can't slip into the commit.
+  if [[ ${#_staged_raycast_files[@]} -eq 0 ]]; then
+    echo "No staged files under raycast/ — skipping"
+    return 0
+  fi
+
+  if ! git diff --quiet -- raycast/package.json; then
+    echo "raycast/package.json has unstaged changes after sync:options"
+    echo ""
+    echo "This usually means src/options/schema.ts was edited without"
+    echo "staging the regenerated package.json. Run:"
+    echo ""
+    echo "    git add raycast/package.json"
+    echo ""
+    echo "then commit again. (If the unstaged diff is unrelated, stash"
+    echo "or stage it explicitly before retrying.)"
+    return 1
+  fi
+}
+
 # ── Main ─────────────────────────────────────────────────────────
 
 echo ""
@@ -154,6 +179,9 @@ run_step 2 "shellcheck (staged .sh)" "check_shellcheck_staged" || exit 1
 # 3. ray lint --fix on raycast/ (with re-stage)
 run_step 3 "ray lint --fix" "check_raycast_lint" || exit 1
 stage_lint_fixes
+
+# 4. raycast/package.json in sync with src/options/schema.ts
+run_step 4 "raycast schema sync check" "check_raycast_schema_sync" || exit 1
 
 echo ""
 log_success "All pre-commit checks passed"

@@ -6,7 +6,7 @@
 # and ray lint + ray build on the raycast extension.
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TOTAL_STEPS=4
+TOTAL_STEPS=5
 
 # ── Read push refs from stdin ────────────────────────────────────
 # Git sends one line per ref: <local_ref> <local_sha> <remote_ref> <remote_sha>
@@ -143,6 +143,23 @@ check_raycast_build() {
   (cd raycast && bun run build)
 }
 
+check_raycast_schema_sync() {
+  # `prelint` + `prebuild` already ran `bun run sync:options`, so the
+  # working tree's raycast/package.json reflects the latest schema. If
+  # it differs from HEAD, the committed launch.preferences block is
+  # stale — block the push so drift can't reach the remote.
+  if ! git diff --quiet HEAD -- raycast/package.json; then
+    echo "raycast/package.json on HEAD is out of sync with src/options/schema.ts"
+    echo ""
+    echo "Amend (or add a follow-up commit) with the regenerated"
+    echo "package.json, then re-push. The fresh file is already in your"
+    echo "working tree — stage it with:"
+    echo ""
+    echo "    git add raycast/package.json"
+    return 1
+  fi
+}
+
 # ── Main ─────────────────────────────────────────────────────────
 
 echo ""
@@ -166,6 +183,9 @@ run_step 3 "ray lint"                  "check_raycast_lint"    || exit 1
 
 # 4. ray build (also typechecks the raycast extension)
 run_step 4 "ray build"                 "check_raycast_build"   || exit 1
+
+# 5. raycast/package.json in sync with src/options/schema.ts on HEAD
+run_step 5 "raycast schema sync check" "check_raycast_schema_sync" || exit 1
 
 echo ""
 log_success "All pre-push checks passed"
