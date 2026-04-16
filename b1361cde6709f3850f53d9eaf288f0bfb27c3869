@@ -1,0 +1,95 @@
+.githooks/pre-commit
+  7d6247d8f80aa106 9,134-158,183-185
+.githooks/pre-push
+  7d6247d8f80aa106 9,146-162,187-189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "b1361cde6709f3850f53d9eaf288f0bfb27c3869",
+  "prompts": {
+    "162ac94e18f50858": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e383e537-9f93-4576-bcb1-8754c32377ae",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 1024,
+      "total_deletions": 2040,
+      "accepted_lines": 906,
+      "overriden_lines": 0
+    },
+    "2e5d71e996f72d00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50ad5e9d-a2c7-4e4f-a896-d1929ebc60b3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 2472,
+      "total_deletions": 1207,
+      "accepted_lines": 679,
+      "overriden_lines": 0
+    },
+    "33802cdd2cee530b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99debb96-aeba-4720-8080-7fcfb9dde0f9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 59,
+      "total_deletions": 26,
+      "accepted_lines": 60,
+      "overriden_lines": 0
+    },
+    "7d6247d8f80aa106": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7fa1b3d4-a196-45b9-b3f3-057a82e56238",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 52,
+      "total_deletions": 3,
+      "accepted_lines": 52,
+      "overriden_lines": 0
+    },
+    "bb10b054cc0f30e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3b77c33-5ed6-402f-99f0-c0810536d30c",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 3,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "d0ee2525e759b2d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5460d9d-5107-4613-bccc-ed850d01ce29",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 782,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_fed3d72f60d150": {
+      "author": "OnCloud"
+    }
+  }
+}
