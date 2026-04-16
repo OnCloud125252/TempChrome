@@ -1,0 +1,25 @@
+openspec/changes/raycast-extension/tasks.md
+  ede9b83a5ee2bc5c 3,23,27,35,39,46,50,54,63,71,79,85,87,93,95,110,116,118,124,131,137,147,158,160
+.claude/skills/raycast-extension/SKILL.md
+  ede9b83a5ee2bc5c 8-13,56-57,61-62,71-72,77-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "4cea38a1e8712f66e1cf96f477d2cc95eece0693",
+  "prompts": {
+    "ede9b83a5ee2bc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90910201-9d0a-4353-8d3c-4add291190c6",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 46,
+      "overriden_lines": 0
+    }
+  }
+}
