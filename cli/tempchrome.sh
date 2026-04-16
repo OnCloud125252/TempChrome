@@ -245,6 +245,8 @@ GOOGLE_DEFAULT_CLIENT_SECRET="kdloedMFGdGla2P1zacGjAQh" \
 --no-first-run \
 --no-default-browser-check \
 --new-window \
+--enable-logging \
+--log-file="$PROFILE_DIR/chrome_debug.log" \
 "${CHROMIUM_ARGS[@]}"
 
 print_divider "$PURPLE"
