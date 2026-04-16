@@ -1,0 +1,122 @@
+.gitignore
+  h_fed3d72f60d150 1-6
+.gitleaksignore
+  4f8309d6a5ce0f52 13-14,17-36
+  h_fed3d72f60d150 2,4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "044f02c18c54e5c63fa8e32cadf7e8476c39cef8",
+  "prompts": {
+    "162ac94e18f50858": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e383e537-9f93-4576-bcb1-8754c32377ae",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 465,
+      "overriden_lines": 0
+    },
+    "2e5d71e996f72d00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50ad5e9d-a2c7-4e4f-a896-d1929ebc60b3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 89,
+      "overriden_lines": 0
+    },
+    "33802cdd2cee530b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99debb96-aeba-4720-8080-7fcfb9dde0f9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    },
+    "4f8309d6a5ce0f52": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97e99a42-9eeb-4357-9caf-45634825e2aa",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 187,
+      "overriden_lines": 0
+    },
+    "864bf6fc8d8d6a69": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4d083b62-d5ef-4348-9e43-9ade3611f90c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1161,
+      "overriden_lines": 0
+    },
+    "ad01fef37a09569b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5061477d-d33a-4409-aa0d-c072d500ad5d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    },
+    "bc1b101bd29aff4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7aa2d655-03e3-4bd0-bce2-39364c02bf3a",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 18,
+      "overriden_lines": 0
+    },
+    "d0ee2525e759b2d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5460d9d-5107-4613-bccc-ed850d01ce29",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 600,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_fed3d72f60d150": {
+      "author": "OnCloud"
+    }
+  }
+}
