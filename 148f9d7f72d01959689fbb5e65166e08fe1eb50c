@@ -1,0 +1,91 @@
+openspec/changes/archive/2026-04-16-raycast-extension/specs/quick-launch/spec.md
+  d0ee2525e759b2d2 1-90
+.gitleaksignore
+  d0ee2525e759b2d2 1-12
+openspec/changes/archive/2026-04-16-raycast-extension/proposal.md
+  d0ee2525e759b2d2 1-40
+openspec/changes/archive/2026-04-16-raycast-extension/specs/chromium-installer/spec.md
+  d0ee2525e759b2d2 1-45
+openspec/changes/archive/2026-04-16-raycast-extension/specs/profile-manager/spec.md
+  d0ee2525e759b2d2 1-135
+openspec/changes/archive/2026-04-16-raycast-extension/specs/launch-options/spec.md
+  d0ee2525e759b2d2 1-130
+openspec/changes/archive/2026-04-16-raycast-extension/.openspec.yaml
+  d0ee2525e759b2d2 1-2
+openspec/specs/profile-manager/spec.md
+  d0ee2525e759b2d2 1-139
+openspec/specs/quick-launch/spec.md
+  d0ee2525e759b2d2 1-94
+openspec/specs/launch-options/spec.md
+  d0ee2525e759b2d2 1-134
+openspec/changes/archive/2026-04-16-raycast-extension/tasks.md
+  d0ee2525e759b2d2 3,44,52,75,89,106,143,154,162,164,166,168,170,172,174
+openspec/specs/chromium-installer/spec.md
+  d0ee2525e759b2d2 1-49
+openspec/changes/archive/2026-04-16-raycast-extension/design.md
+  d0ee2525e759b2d2 1-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "148f9d7f72d01959689fbb5e65166e08fe1eb50c",
+  "prompts": {
+    "2e1690da4d66f9b7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4198d930-7f5f-418f-b80e-e225e61d0996",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 449,
+      "overriden_lines": 0
+    },
+    "33802cdd2cee530b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99debb96-aeba-4720-8080-7fcfb9dde0f9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    },
+    "b06dca2810ae2f8f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e947dae7-5c09-4573-80a2-622d7343b359",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    },
+    "d0ee2525e759b2d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5460d9d-5107-4613-bccc-ed850d01ce29",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 801,
+      "total_deletions": 15,
+      "accepted_lines": 1365,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_fed3d72f60d150": {
+      "author": "OnCloud"
+    }
+  }
+}
