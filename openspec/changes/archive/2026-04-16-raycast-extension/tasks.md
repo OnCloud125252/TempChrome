@@ -76,15 +76,15 @@
 
 ## 4. TempChrome Root Command (view, List)
 
-- [x] 4.1 Create `raycast/src/tempchrome.tsx` default-exporting a React functional component `Command()` that returns `<List>` containing four `<List.Item>` elements in this order:
+- [x] 4.1 Create `raycast/src/Tempchrome.tsx` default-exporting a React functional component `Command()` that returns `<List>` containing four `<List.Item>` elements in this order:
   1. `{ icon: Icon.Rocket, title: "Launch Now", actions: <ActionPanel><Action title="Launch" onAction={handleLaunch} /></ActionPanel> }`
   2. `{ icon: Icon.Gear, title: "Launch with Options…", actions: <ActionPanel><Action.Push title="Open" target={<LaunchOptionsForm />} /></ActionPanel> }`
   3. `{ icon: Icon.Folder, title: "Manage Temp Profiles…", actions: <ActionPanel><Action.Push title="Open" target={<ProfileList />} /></ActionPanel> }`
   4. `{ icon: Icon.Download, title: "Install or Update Chromium…", actions: <ActionPanel><Action title="Open Terminal" onAction={handleInstall} /></ActionPanel> }`
 
-- [x] 4.2 Define `handleLaunch` in `tempchrome.tsx` — imports and calls `quickLaunch()` from `./launch`. After `await quickLaunch()`, close the Raycast window via `popToRoot({ clearSearchBar: true })` so the user lands back on root.
+- [x] 4.2 Define `handleLaunch` in `Tempchrome.tsx` — imports and calls `quickLaunch()` from `./launch`. After `await quickLaunch()`, close the Raycast window via `popToRoot({ clearSearchBar: true })` so the user lands back on root.
 
-- [x] 4.3 Define `handleInstall` in `tempchrome.tsx` per task 7.1 (implementation lives in this file; referenced from task section 7 for clarity).
+- [x] 4.3 Define `handleInstall` in `Tempchrome.tsx` per task 7.1 (implementation lives in this file; referenced from task section 7 for clarity).
 
 - [x] 4.4 Manual verification: in `ray develop`, trigger "TempChrome" (the view command). Verify: all four list items render in order with correct icons; selecting "Launch Now" opens Chromium; "Launch with Options…" pushes a Form; "Manage Temp Profiles…" pushes a List; "Install or Update Chromium…" opens Terminal.app.
 
@@ -144,7 +144,7 @@
 
 ## 7. Install Action
 
-- [x] 7.1 In `raycast/src/tempchrome.tsx`, implement `async function handleInstall(): Promise<void>`:
+- [x] 7.1 In `raycast/src/Tempchrome.tsx`, implement `async function handleInstall(): Promise<void>`:
   - Build two AppleScript strings exactly: `const s1 = 'tell application "Terminal" to activate';` and `const s2 = 'tell application "Terminal" to do script "tempchrome --install"';`.
   - Wrap in try/catch:
     - Try: `await execFilePromise("osascript", ["-e", s1, "-e", s2]);` then `showHUD("Opening Terminal to install Chromium…")`.

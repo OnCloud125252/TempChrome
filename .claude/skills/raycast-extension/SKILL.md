@@ -1,185 +1,89 @@
 ---
 name: raycast-extension
-description: Build Raycast extensions with React and TypeScript. Use when the user asks to create a Raycast extension, command, or tool.
+description: Build and maintain Raycast extensions with React, TypeScript, and bun. Triggers on @raycast/api, List, Grid, Detail, Form, ActionPanel, AI.ask, LocalStorage, Cache, showToast, BrowserExtension, useCachedPromise, and the Raycast `ray` CLI. Use when the user asks to create, fix, or extend a Raycast extension, command, tool, or UI primitive in this repo.
 ---
 
 # Raycast Extension Development
+
+Opinionated entry point for building Raycast extensions in this repo. Deep specs live under `references/api/*.md` — consult them for the full component surface. Keep this file scannable.
 
 ## Package Manager: bun only
 
 This project uses **bun** exclusively. Do not introduce `npm`, `yarn`, or `pnpm` commands — not in scripts, docs, or examples. Translate any `npm run X` guidance to `bun run X`. The lockfile is `bun.lock` (text, Bun 1.2+); commit it, don't gitignore it.
 
-For the `ray` CLI itself (dev, build, lint, publish, login), see the companion `ray` skill.
+For the `ray` CLI itself (`ray build`, `ray develop`, `ray lint`, `ray publish`, `ray login`), see the companion `ray` skill — don't re-document those commands here.
 
-## Quick Start
+## Agent Workflow
 
-1. Create project structure
-2. Write package.json with extension config
-3. Implement command in src/
-4. Run `bun install && bun run dev`
+When asked to implement or fix a Raycast feature:
 
-## Project Structure
+1. **Identify the UI primitive** — `List`, `Grid`, `Detail`, `Form`, or `MenuBarExtra` (use the decision tree below).
+2. **Consult the reference** — open `references/api/<name>.md` for the full prop surface before coding.
+3. **Default feedback & storage**:
+   - Feedback: `showToast` for Loading/Success/Failure states; `showHUD` only for quick confirmation after Raycast closes; `Alert` to confirm destructive actions.
+   - Storage: `Cache` for transient/performance data (sync API); `LocalStorage` for persistent user data (async).
+   - Gated APIs: always wrap `AI` and `BrowserExtension` in `environment.canAccess(...)` checks.
+4. **Wire up the action** — every `Action` needs a toast/HUD **and** a keyboard shortcut (see the companion `raycast-ux-feedback` skill for the repo policy).
+5. **Cite the ref** — when responding, link back to the specific `references/api/*.md` you used.
 
-```
-my-extension/
-├── package.json          # Extension manifest + dependencies
-├── tsconfig.json         # TypeScript config
-├── .eslintrc.json        # ESLint config
-├── raycast-env.d.ts      # Type definitions (auto-generated)
-├── assets/
-│   └── extension-icon.png  # 512x512 PNG icon
-└── src/
-    └── command-name.tsx    # Command implementation
-```
+## UI Primitive Decision Tree
 
-## package.json Template
+| Need | Component | Reference |
+|------|-----------|-----------|
+| Searchable text-heavy list | `List` | [list.md](references/api/list.md) |
+| Image-heavy gallery | `Grid` | [grid.md](references/api/grid.md) |
+| Collect user input | `Form` | [form.md](references/api/form.md) |
+| Rich markdown + metadata | `Detail` | [detail.md](references/api/detail.md) |
+| Persistent status-bar icon | `MenuBarExtra` | [menu-bar-commands.md](references/api/menu-bar-commands.md) |
+| Background task only | `no-view` mode (no UI) | [package-structure.md](references/package-structure.md) |
+
+## Command Modes
+
+| Mode | Use case | Supports `interval` |
+|------|----------|---------------------|
+| `view` | UI with `List`/`Detail`/`Form`/`Grid` | No |
+| `no-view` | Background task, clipboard, notifications | Yes |
+| `menu-bar` | Menu bar icon with dropdown | Yes |
+
+See [package-structure.md](references/package-structure.md) for the full manifest schema.
+
+## React 19 Pitfalls (non-obvious footguns)
+
+`@raycast/api@1.104+` declares **exact** peer deps:
 
 ```json
-{
-  "name": "extension-name",
-  "title": "Extension Title",
-  "description": "What this extension does",
-  "icon": "extension-icon.png",
-  "author": "author-name",
-  "categories": ["Productivity", "Developer Tools"],
-  "license": "MIT",
-  "commands": [
-    {
-      "name": "command-name",
-      "title": "Command Title",
-      "description": "What this command does",
-      "mode": "view",
-      "keywords": ["keyword1", "keyword2"]
-    }
-  ],
-  "dependencies": {
-    "@raycast/api": "^1.104.12",
-    "@raycast/utils": "^1.19.1"
-  },
-  "devDependencies": {
-    "@raycast/eslint-config": "^1.0.11",
-    "@types/node": "22.13.10",
-    "@types/react": "19.0.10",
-    "eslint": "^8.57.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.5.4"
-  },
-  "scripts": {
-    "build": "ray build --skip-types -e dist -o dist",
-    "dev": "ray develop",
-    "lint:fix": "ray lint --fix",
-    "lint": "ray lint",
-    "publish": "ray publish"
-  }
-}
+"@types/react": "19.0.10",
+"@types/node": "22.13.10"
 ```
 
-**Type version pinning matters.** `@raycast/api@1.104+` declares `@types/react: 19.0.10` and `@types/node: 22.13.10` as **exact** peer deps. Using `^18.x` for react types will break `ray build` with a "Type 'bigint' is not assignable to type 'ReactNode'" error — that's React 19's widened `ReactNode` colliding with React 18 types.
+Using `^18.x` for `@types/react` breaks `ray build` with `Type 'bigint' is not assignable to type 'ReactNode'` — React 19 widened `ReactNode` and collides with React 18 types.
 
-**React 19 removed the global `JSX` namespace.** With `jsx: "react-jsx"` and React 19 types, `function Command(): JSX.Element` fails to compile. Import the namespace explicitly:
+React 19 also removed the global `JSX` namespace. With `jsx: "react-jsx"` and React 19 types, `function Command(): JSX.Element` fails. Import the namespace explicitly:
 
 ```tsx
 import type { JSX } from "react";
 
-export default function Command(): JSX.Element { ... }
+export default function Command(): JSX.Element { /* ... */ }
 ```
 
-## Command Modes
+## Quick Cookbook
 
-| Mode | Use Case |
-|------|----------|
-| `view` | Show UI with Detail, List, Form, Grid |
-| `no-view` | Background task, clipboard, notifications only |
-| `menu-bar` | Menu bar icon with dropdown |
-
-## Hotkey Configuration
-
-Add to command in package.json:
-```json
-"hotkey": {
-  "modifiers": ["opt"],
-  "key": "m"
-}
-```
-
-Modifiers: `cmd`, `opt`, `ctrl`, `shift`
-
-**Note**: Hotkeys in package.json are suggestions. Users set them in Raycast Preferences → Extensions.
-
-## tsconfig.json
-
-```json
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "lib": ["ES2022"],
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "target": "ES2022"
-  },
-  "include": ["src/**/*", "raycast-env.d.ts"]
-}
-```
-
-## .eslintrc.json
-
-```json
-{
-  "root": true,
-  "extends": ["@raycast"]
-}
-```
-
-## Command Patterns
-
-### No-View Command (Background Task)
+### List + ActionPanel
 
 ```tsx
-import { showHUD, Clipboard, showToast, Toast } from "@raycast/api";
-
-export default async function Command() {
-  const toast = await showToast({
-    style: Toast.Style.Animated,
-    title: "Working...",
-  });
-
-  try {
-    // Do work
-    const result = await doSomething();
-
-    await Clipboard.copy(result);
-    await showHUD("✅ Done!");
-  } catch (error) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Failed";
-    toast.message = error instanceof Error ? error.message : "Unknown error";
-  }
-}
-```
-
-### View Command (List)
-
-```tsx
-import { List, ActionPanel, Action } from "@raycast/api";
+import { ActionPanel, Action, List } from "@raycast/api";
 
 export default function Command() {
   return (
-    <List>
+    <List isLoading={isLoading} searchBarPlaceholder="Search…" throttle>
       <List.Item
-        title="Item"
+        title="Item Title"
+        subtitle="Subtitle"
+        accessories={[{ text: "Tag" }]}
         actions={
           <ActionPanel>
-            <Action.CopyToClipboard content="text" />
+            <Action.Push title="View Details" target={<Detail markdown="# Details" />} />
+            <Action.CopyToClipboard title="Copy" content="value" />
           </ActionPanel>
         }
       />
@@ -188,415 +92,153 @@ export default function Command() {
 }
 ```
 
-### View Command (Detail)
+Refs: [list.md](references/api/list.md), [action-panel.md](references/api/action-panel.md), [actions.md](references/api/actions.md). Runnable: [examples/list-with-actions.tsx](examples/list-with-actions.tsx), [examples/list-with-detail.tsx](examples/list-with-detail.tsx).
+
+### Detail (markdown + metadata)
 
 ```tsx
-import { Detail } from "@raycast/api";
+<Detail
+  isLoading={isLoading}
+  markdown={"# Heading\nContent here."}
+  metadata={
+    <Detail.Metadata>
+      <Detail.Metadata.Label title="Status" text="Active" icon={Icon.Checkmark} />
+    </Detail.Metadata>
+  }
+/>
+```
 
-export default function Command() {
-  const markdown = `# Hello World`;
-  return <Detail markdown={markdown} />;
+Ref: [detail.md](references/api/detail.md). Runnable: [examples/detail-with-metadata.tsx](examples/detail-with-metadata.tsx).
+
+### Form (always include SubmitForm)
+
+```tsx
+<Form
+  actions={
+    <ActionPanel>
+      <Action.SubmitForm onSubmit={(values) => console.log(values)} />
+    </ActionPanel>
+  }
+>
+  <Form.TextField id="title" title="Title" placeholder="Enter title" />
+  <Form.TextArea id="description" title="Description" />
+</Form>
+```
+
+Ref: [form.md](references/api/form.md). Runnable: [examples/form-with-validation.tsx](examples/form-with-validation.tsx).
+
+### Grid
+
+Ref: [grid.md](references/api/grid.md). Runnable: [examples/grid-with-images.tsx](examples/grid-with-images.tsx).
+
+### No-view background task
+
+```tsx
+import { showHUD, Clipboard, showToast, Toast } from "@raycast/api";
+
+export default async function Command() {
+  const toast = await showToast({ style: Toast.Style.Animated, title: "Working…" });
+  try {
+    const result = await doSomething();
+    await Clipboard.copy(result);
+    await showHUD("Done!");
+  } catch (error) {
+    toast.style = Toast.Style.Failure;
+    toast.title = "Failed";
+    toast.message = error instanceof Error ? error.message : "Unknown error";
+  }
 }
 ```
 
-## Performance & Caching
-
-### Instant Load Pattern (No Empty Flash)
-
-Use synchronous cache read + async refresh for instant perceived load:
+### Feedback (toast, HUD, alert)
 
 ```tsx
-import { List, Cache } from "@raycast/api";
-import { useCachedPromise, withCache } from "@raycast/utils";
+await showToast({ style: Toast.Style.Success, title: "Success!" });
+await showHUD("Done!"); // use when Raycast will close immediately
+```
 
-const cache = new Cache();
-const CACHE_KEY = "myData";
+Raycast offers three feedback mechanisms: **Toast** for async progress and errors, **HUD** to confirm after Raycast closes, **Alert** to confirm a destructive action before proceeding. Refs: [toast.md](references/api/toast.md), [hud.md](references/api/hud.md), [alert.md](references/api/alert.md).
 
-// Read cache synchronously at module load (before React renders)
-function getInitialData(): MyData[] {
-  const cached = cache.get(CACHE_KEY);
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
+### Data fetching
 
-// Expensive async operation wrapped with withCache (5 min TTL)
-const fetchExpensiveData = withCache(
-  async () => {
-    // Your expensive operation here
-    return await someSlowOperation();
-  },
-  { maxAge: 5 * 60 * 1000 }
-);
-
-async function fetchAllData(): Promise<MyData[]> {
-  const data = await fetchExpensiveData();
-  // Update cache for next launch
-  cache.set(CACHE_KEY, JSON.stringify(data));
-  return data;
-}
+```tsx
+import { List } from "@raycast/api";
+import { useFetch } from "@raycast/utils";
 
 export default function Command() {
-  const { data, isLoading } = useCachedPromise(fetchAllData, [], {
-    initialData: getInitialData(), // Sync read - instant render!
-    keepPreviousData: true,
-  });
-
+  const { data, isLoading } = useFetch<Item[]>("https://api.example.com/items");
   return (
-    <List isLoading={isLoading && !data?.length}>
-      {data?.map(item => <List.Item key={item.id} title={item.name} />)}
+    <List isLoading={isLoading}>
+      {data?.map((item) => <List.Item key={item.id} title={item.name} />)}
     </List>
   );
 }
 ```
 
-### Key Caching Utilities
+For caching + stale-while-revalidate, see [references/performance.md](references/performance.md). Runnable: [examples/data-fetching.tsx](examples/data-fetching.tsx).
 
-| Utility | Purpose |
-|---------|---------|
-| `Cache` | Persistent disk cache, sync read/write |
-| `withCache(fn, {maxAge})` | Wrap async functions with TTL cache |
-| `useCachedPromise` | Stale-while-revalidate pattern |
-| `LocalStorage` | Async key-value storage |
-
-### Avoiding CLS (Content Layout Shift)
-
-Load all data in ONE async function:
+### Storage
 
 ```tsx
-// BAD - causes layout shift
-const [customData, setCustomData] = useState([]);
-useEffect(() => {
-  loadCustomData().then(setCustomData); // Second render!
-}, []);
+// Cache (sync, transient)
+const cache = new Cache();
+cache.set("key", "value");
 
-// GOOD - single fetch, no shift
-async function fetchAllData() {
-  const [dataA, dataB] = await Promise.all([
-    fetchDataA(),
-    fetchDataB(),
-  ]);
-  return combineData(dataA, dataB);
+// LocalStorage (async, persistent)
+await LocalStorage.setItem("key", "value");
+```
+
+Refs: [caching.md](references/api/caching.md), [storage.md](references/api/storage.md).
+
+### AI & Browser Extension (gated)
+
+```tsx
+if (environment.canAccess(AI)) {
+  const result = await AI.ask("Prompt");
+}
+
+if (environment.canAccess(BrowserExtension)) {
+  const tabs = await BrowserExtension.getTabs();
 }
 ```
 
-### Non-Blocking Operations (Prevent UI Freeze)
+Refs: [ai.md](references/api/ai.md), [browser-extension.md](references/api/browser-extension.md), [environment.md](references/api/environment.md). Runnable: [examples/ai-integration.tsx](examples/ai-integration.tsx).
 
-**Root cause of "tiny delay"**: Sync operations (`execSync`, `statSync`, `readdirSync`) block the event loop during revalidation, freezing the UI even with cached data displayed.
+> AI requires Raycast Pro. Always gate on `environment.canAccess(AI)` — never assume availability.
 
-```tsx
-// BAD - blocks event loop, UI freezes during revalidation
-import { execSync } from "child_process";
-import { statSync, readdirSync, copyFileSync } from "fs";
-
-function fetchData() {
-  copyFileSync(src, dest);                    // Blocks!
-  const result = execSync("sqlite3 query");   // Blocks!
-  const entries = readdirSync(dir);           // Blocks!
-  for (const entry of entries) {
-    statSync(join(dir, entry));               // Blocks N times!
-  }
-}
-
-// GOOD - fully async, UI renders cached data while refreshing
-import { exec } from "child_process";
-import { promisify } from "util";
-import { stat, readdir, copyFile, access } from "fs/promises";
-
-const execAsync = promisify(exec);
-
-async function fetchData() {
-  await copyFile(src, dest);                         // Non-blocking
-  const { stdout } = await execAsync("sqlite3...");  // Non-blocking
-
-  // Use withFileTypes to avoid extra stat calls
-  const entries = await readdir(dir, { withFileTypes: true });
-  const results = entries
-    .filter(e => e.isDirectory())  // No stat needed!
-    .map(e => ({ path: join(dir, e.name), name: e.name }));
-}
-```
-
-**Key optimizations:**
-1. Replace `execSync` with `promisify(exec)` for shell commands
-2. Replace `existsSync` with `access()` from `fs/promises`
-3. Replace `readdirSync` + `statSync` loop with `readdir(dir, { withFileTypes: true })`
-4. Run all path validations in parallel with `Promise.all`
-5. Use SQLite URI mode for direct read-only access (no file copy needed)
-
-### SQLite Direct Access (Skip File Copy)
-
-When reading SQLite databases from other apps (like Zed, VS Code, etc.), avoid copying the database file. Use URI mode for direct read-only access:
-
-```tsx
-// BAD - copies entire database file (slow, blocks)
-import { copyFileSync, unlinkSync } from "fs";
-
-const tempDb = `/tmp/copy-${Date.now()}.sqlite`;
-copyFileSync(originalDb, tempDb);           // Expensive!
-execSync(`sqlite3 "${tempDb}" "SELECT..."`);
-unlinkSync(tempDb);                         // Cleanup
-
-// GOOD - direct read-only access via URI mode
-const uri = `file:${originalDb}?mode=ro&immutable=1`;
-const { stdout } = await execAsync(`sqlite3 "${uri}" "SELECT..."`);
-```
-
-**URI parameters:**
-- `mode=ro` - Read-only mode, no write locks acquired
-- `immutable=1` - Skip WAL/lock checks, treat file as immutable
-
-This eliminates the file copy entirely, saving significant I/O time.
-
-### execFile vs exec (Bypass Shell)
-
-`exec` spawns a shell (~20ms overhead), `execFile` calls binary directly (~4ms):
-
-```tsx
-// BAD - spawns shell, parses command string
-import { exec } from "child_process";
-const execAsync = promisify(exec);
-await execAsync(`sqlite3 -separator '|||' "${db}" "${query}"`);
-
-// GOOD - direct binary execution, ~16ms faster
-import { execFile } from "child_process";
-const execFileAsync = promisify(execFile);
-await execFileAsync("sqlite3", ["-separator", "|||", db, query]);
-```
-
-### Sidecar Pattern (True Background Preloading)
-
-For truly instant cold starts, use a background worker to pre-warm the cache before the user opens the extension.
-
-**The Problem:** `view` commands cannot use `interval` (background scheduling). Only `no-view` and `menu-bar` modes support it.
-
-**The Solution:** Create two commands that share the same cache:
-
-```json
-// package.json
-{
-  "commands": [
-    {
-      "name": "main",
-      "title": "My Extension",
-      "mode": "view"
-    },
-    {
-      "name": "background-sync",
-      "title": "Background Sync",
-      "mode": "no-view",
-      "interval": "15m"
-    }
-  ]
-}
-```
-
-```tsx
-// shared-cache.ts - both commands import this
-import { Cache } from "@raycast/api";
-export const sharedCache = new Cache(); // Shared across extension
-
-// background-sync.tsx (no-view worker)
-import { sharedCache } from "./shared-cache";
-export default async function Command() {
-  const data = await fetchExpensiveData();
-  sharedCache.set("projects", JSON.stringify(data));
-}
-
-// main.tsx (view command)
-import { sharedCache } from "./shared-cache";
-function getInitialData() {
-  const cached = sharedCache.get("projects");
-  return cached ? JSON.parse(cached) : [];
-}
-export default function Command() {
-  const { data } = useCachedPromise(fetchData, [], {
-    initialData: getInitialData(), // Instant from pre-warmed cache!
-  });
-}
-```
-
-**Key points:**
-- Worker runs silently on interval, user never sees it
-- Both commands share the same `Cache` (scoped to extension, not command)
-- View command reads synchronously from pre-warmed cache
-- Use `15m` to `1h` intervals to avoid battery/rate-limit issues
-
-### Large Datasets: useSQL over JSON Cache
-
-For >1,000 items, use SQLite instead of JSON cache for instant filtering:
-
-```tsx
-// BAD - loads entire 10MB JSON into memory to filter
-const allProjects = JSON.parse(cache.get("projects"));
-const filtered = allProjects.filter(p => p.name.includes(query));
-
-// GOOD - SQLite queries only matching rows
-import { useSQL } from "@raycast/utils";
-const { data } = useSQL(dbPath, `SELECT * FROM projects WHERE name LIKE ?`, [`%${query}%`]);
-```
-
-### Optimistic UI (Instant Actions)
-
-For write operations, update UI immediately before API confirms:
-
-```tsx
-const { mutate } = useCachedPromise(fetchItems);
-
-async function deleteItem(id: string) {
-  await mutate(deleteItemAPI(id), {
-    optimisticUpdate: (current) => current.filter(i => i.id !== id),
-    rollbackOnError: true, // Revert if API fails
-  });
-}
-```
-
-User sees instant feedback; rollback happens automatically on failure.
-
-```tsx
-// BAD - sequential stat calls
-const entries = readdirSync(dir);
-for (const entry of entries) {
-  const s = statSync(join(dir, entry));  // N blocking calls
-}
-
-// GOOD - parallel async checks
-const checkPath = async (p: string) => {
-  try {
-    const s = await stat(p);
-    return s.isDirectory() ? p : null;
-  } catch { return null; }
-};
-
-const results = await Promise.all(paths.map(checkPath));
-```
-
-## Common APIs
-
-### Clipboard
-
-```tsx
-import { Clipboard } from "@raycast/api";
-
-await Clipboard.copy("text");
-await Clipboard.paste("text");
-const text = await Clipboard.readText();
-```
-
-### Notifications
-
-```tsx
-import { showHUD, showToast, Toast } from "@raycast/api";
-
-// Quick notification (disappears)
-await showHUD("Done!");
-
-// Toast with progress
-const toast = await showToast({
-  style: Toast.Style.Animated,
-  title: "Loading...",
-});
-toast.style = Toast.Style.Success;
-toast.title = "Complete";
-```
-
-### AppleScript (macOS Integration)
+### AppleScript (macOS integration)
 
 ```tsx
 import { runAppleScript } from "@raycast/utils";
 
-// Get Chrome active tab URL
 const url = await runAppleScript(`
   tell application "Google Chrome"
     return URL of active tab of front window
   end tell
 `);
-
-// Get Safari URL
-const safariUrl = await runAppleScript(`
-  tell application "Safari"
-    return URL of current tab of front window
-  end tell
-`);
-
-// Get frontmost app
-const app = await runAppleScript(`
-  tell application "System Events"
-    return name of first application process whose frontmost is true
-  end tell
-`);
 ```
 
-### Fetch Data
-
-```tsx
-// Native fetch works
-const response = await fetch("https://api.example.com/data");
-const data = await response.json();
-```
+Ref: [system-utilities.md](references/api/system-utilities.md).
 
 ### Preferences
 
-In package.json:
-```json
-"preferences": [
-  {
-    "name": "apiKey",
-    "type": "password",
-    "required": true,
-    "title": "API Key",
-    "description": "Your API key"
-  }
-]
-```
-
-In code:
 ```tsx
 import { getPreferenceValues } from "@raycast/api";
 
-interface Preferences {
-  apiKey: string;
-}
-
+interface Preferences { apiKey: string }
 const { apiKey } = getPreferenceValues<Preferences>();
 ```
 
-## Creating Extension Icon
+See [package-structure.md](references/package-structure.md#preferences) for the manifest schema and [preferences.md](references/api/preferences.md) for the runtime API.
 
-Use ImageMagick:
-```bash
-convert -size 512x512 xc:'#6366F1' -fill white -gravity center \
-  -font Helvetica-Bold -pointsize 280 -annotate +0+20 'M' \
-  assets/extension-icon.png
-```
+## Performance
 
-## Development Workflow
+For instant cold starts, sidecar preloading, SQLite URI mode, `execFile` vs `exec`, optimistic UI, and CLS avoidance — see the full guide at [references/performance.md](references/performance.md). This is where the "tiny delay" and "UI freezes during revalidation" bugs get fixed.
+
+## Raycast Deeplinks & Auto-Reload
 
 ```bash
-# Install dependencies
-bun install
-
-# Start dev server (hot reload)
-bun run dev
-
-# Lint and fix
-bun run lint:fix
-
-# Build for production
-bun run build
-```
-
-## Raycast Deeplinks
-
-Trigger Raycast commands programmatically via URL scheme:
-
-```bash
-# Reload all extensions
+# Reload all extensions after a build
 open "raycast://extensions/raycast/raycast/reload-extensions"
 
 # Open Raycast
@@ -606,35 +248,43 @@ open "raycast://focus"
 open "raycast://extensions/{author}/{extension}/{command}"
 ```
 
-### Auto-reload after build
+The default build script already chains a reload:
 
-Add to package.json scripts:
 ```json
 "build": "ray build --skip-types -e dist -o dist && open raycast://extensions/raycast/raycast/reload-extensions"
 ```
 
-Or create a reload script:
-```bash
-#!/bin/bash
-bun run build && open "raycast://extensions/raycast/raycast/reload-extensions"
-```
-
-## Testing in Raycast
-
-1. Run `bun run dev` (provides hot reload)
-2. Open Raycast
-3. Search for your command name
-4. Press Enter to run
-
-Without dev server running, use deeplink to reload after changes:
-```bash
-bun run build && open "raycast://extensions/raycast/raycast/reload-extensions"
-```
-
-## Publishing
+## Development Workflow
 
 ```bash
-bun run publish
+bun install          # install deps
+bun run dev          # hot-reload dev server (= ray develop)
+bun run lint:fix     # auto-fix lint and formatting
+bun run build        # production build into dist/
+bun run publish      # submit to Raycast Store
 ```
 
-Submits to Raycast Store for review.
+For `ray` CLI flags and troubleshooting, defer to the companion `ray` skill.
+
+## Reference Index
+
+- **UI Components**
+  - [action-panel.md](references/api/action-panel.md) · [actions.md](references/api/actions.md)
+  - [detail.md](references/api/detail.md) · [form.md](references/api/form.md) · [grid.md](references/api/grid.md) · [list.md](references/api/list.md)
+  - [user-interface.md](references/api/user-interface.md)
+- **Interactivity**
+  - [alert.md](references/api/alert.md) · [keyboard.md](references/api/keyboard.md) · [navigation.md](references/api/navigation.md) · [raycast-window-search-bar.md](references/api/raycast-window-search-bar.md)
+- **Utilities & Services**
+  - [ai.md](references/api/ai.md) · [browser-extension.md](references/api/browser-extension.md) · [clipboard.md](references/api/clipboard.md)
+  - [environment.md](references/api/environment.md) · [oauth.md](references/api/oauth.md) · [system-utilities.md](references/api/system-utilities.md)
+  - [hud.md](references/api/hud.md) · [toast.md](references/api/toast.md)
+- **Data & Configuration**
+  - [caching.md](references/api/caching.md) · [colors.md](references/api/colors.md) · [icons-images.md](references/api/icons-images.md)
+  - [preferences.md](references/api/preferences.md) · [storage.md](references/api/storage.md)
+- **Advanced**
+  - [command-related-utilities.md](references/api/command-related-utilities.md) · [menu-bar-commands.md](references/api/menu-bar-commands.md)
+  - [tool.md](references/api/tool.md) · [window-management.md](references/api/window-management.md)
+- **Project-wide guides**
+  - [performance.md](references/performance.md) · [package-structure.md](references/package-structure.md)
+- **Runnable examples** — [examples/](examples/): `list-with-actions`, `list-with-detail`, `form-with-validation`, `detail-with-metadata`, `grid-with-images`, `data-fetching`, `ai-integration`, `menubar-extra`.
+- **Companion skills** — `ray` (CLI), `raycast-ux-feedback` (toast + hotkey policy for every action).
