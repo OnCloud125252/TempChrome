@@ -1,5 +1,7 @@
 # Known public Debian Chromium API keys used by the project
+
 # These are already visible in Debian's package sources and documented in CLAUDE.md
+
 openspec/specs/quick-launch/spec.md:gcp-api-key:18
 openspec/specs/quick-launch/spec.md:generic-api-key:18
 067088eb0d5aa0e0b7e4a8ff65a53b941fd9c825:openspec/changes/raycast-extension/specs/quick-launch/spec.md:gcp-api-key:15
@@ -8,5 +10,27 @@ openspec/specs/quick-launch/spec.md:generic-api-key:18
 067088eb0d5aa0e0b7e4a8ff65a53b941fd9c825:openspec/changes/raycast-extension/tasks.md:generic-api-key:29
 3c8775ff646fd0395463b8039857bf95c24792dd:raycast/src/constants.ts:gcp-api-key:9
 3c8775ff646fd0395463b8039857bf95c24792dd:raycast/src/constants.ts:generic-api-key:11
+cli/tempchrome.sh:gcp-api-key:239
+cli/tempchrome.sh:generic-api-key:241
 48ad766e663ac93fb8423ef86868b6a65ec9ba70:cli/tempchrome.sh:gcp-api-key:239
 48ad766e663ac93fb8423ef86868b6a65ec9ba70:cli/tempchrome.sh:generic-api-key:241
+
+# Additional known public Debian Chromium API key locations
+openspec/changes/archive/2026-04-16-raycast-extension/specs/quick-launch/spec.md:gcp-api-key:15
+openspec/changes/archive/2026-04-16-raycast-extension/specs/quick-launch/spec.md:generic-api-key:15
+openspec/changes/archive/2026-04-16-raycast-extension/tasks.md:gcp-api-key:29
+openspec/changes/archive/2026-04-16-raycast-extension/tasks.md:generic-api-key:29
+openspec/changes/add-chromium-log-viewer/specs/quick-launch/spec.md:gcp-api-key:16
+openspec/changes/add-chromium-log-viewer/specs/quick-launch/spec.md:generic-api-key:16
+raycast/src/chromium/constants.ts:gcp-api-key:9
+raycast/src/chromium/constants.ts:generic-api-key:11
+
+# Build artifacts (dist contains bundled constants)
+raycast/dist/launch.js:gcp-api-key:31
+raycast/dist/launch.js:generic-api-key:31
+raycast/dist/launch.js:linear-client-secret:30
+raycast/dist/launch.js:asana-client-id:30
+raycast/dist/tempchrome.js:gcp-api-key:31
+raycast/dist/tempchrome.js:generic-api-key:31
+raycast/dist/tempchrome.js:linear-client-secret:30
+raycast/dist/tempchrome.js:asana-client-id:30

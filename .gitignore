@@ -1,2 +1,6 @@
-.claude/worktrees
-.claude/recent-work
+.DS_Store
+
+/TODO.md
+
+/.claude/worktrees
+/.claude/recent-work
