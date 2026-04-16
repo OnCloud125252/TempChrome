@@ -11,8 +11,6 @@ export const GOOGLE_ENV = {
   GOOGLE_DEFAULT_CLIENT_SECRET: "kdloedMFGdGla2P1zacGjAQh",
 } as const;
 
-export const AUTO_CLEANUP_REGISTRY_KEY = "tempchrome.auto-cleanup-registry";
-
 export const ID_CHARSET = "abcdefghijklmnopqrstuvwxyz0123456789";
 export const ID_LENGTH = 10;
 export const MAX_ID_ATTEMPTS = 100;

@@ -4,9 +4,9 @@ import { Action, ActionPanel, Icon, List, popToRoot, showHUD } from "@raycast/ap
 import { showFailureToast } from "@raycast/utils";
 import type { JSX } from "react";
 
-import LaunchOptionsForm from "./LaunchOptionsForm";
+import LaunchOptionsForm from "./options/LaunchOptionsForm";
 import { quickLaunch } from "./launch";
-import ProfileList from "./ProfileList";
+import ProfileList from "./profiles/ProfileList";
 
 const execFileAsync = promisify(execFile);
 

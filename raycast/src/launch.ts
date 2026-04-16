@@ -1,17 +1,22 @@
 import { getPreferenceValues, showHUD } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 
-import { chromiumExists, clearQuarantine, createTempProfile, launchChromium } from "./chromium";
+import {
+  chromiumExists,
+  clearQuarantine,
+  createTempProfile,
+  launchChromium,
+} from "./chromium/launcher";
 import { getPreferences } from "./preferences";
-import { buildExtraArgs } from "./launchOptionsSchema";
-import { markForAutoCleanup, runSweepFireAndForget } from "./auto-cleanup";
+import { buildExtraArgs } from "./options/schema";
+import { markForAutoCleanup, runSweepFireAndForget } from "./profiles/autoCleanup";
 
 export async function quickLaunch(): Promise<void> {
   try {
-    const prefs = getPreferences();
-    const launchPrefs = getPreferenceValues<Preferences.Launch>();
+    const preferences = getPreferences();
+    const launchPreferences = getPreferenceValues<Preferences.Launch>();
 
-    if (!(await chromiumExists(prefs.chromiumPath))) {
+    if (!(await chromiumExists(preferences.chromiumPath))) {
       await showFailureToast(new Error("not found"), {
         title: "Chromium not found",
         message: "Run 'Install or Update Chromium' from the TempChrome command to install it.",
@@ -19,18 +24,18 @@ export async function quickLaunch(): Promise<void> {
       return;
     }
 
-    const extraArgs = buildExtraArgs(launchPrefs);
+    const extraArgs = buildExtraArgs(launchPreferences);
 
-    const profileDir = await createTempProfile(prefs.tempBaseDir);
-    await clearQuarantine(prefs.chromiumPath);
-    launchChromium(prefs.chromiumPath, profileDir, extraArgs);
+    const profileDir = await createTempProfile(preferences.tempBaseDir);
+    await clearQuarantine(preferences.chromiumPath);
+    launchChromium(preferences.chromiumPath, profileDir, extraArgs);
 
-    if (launchPrefs.autoCleanup) {
+    if (launchPreferences.autoCleanup) {
       await markForAutoCleanup(profileDir);
     }
 
     await showHUD(
-      launchPrefs.autoCleanup ? "Launched (auto-cleanup enabled)" : "Launched TempChrome",
+      launchPreferences.autoCleanup ? "Launched (auto-cleanup enabled)" : "Launched TempChrome",
     );
     runSweepFireAndForget();
   } catch (error) {

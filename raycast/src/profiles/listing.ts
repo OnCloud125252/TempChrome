@@ -1,8 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
-
-import { readRegistry } from "./auto-cleanup";
-import { getChromiumProcessArgs, isProfileInUse } from "./process-check";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { getChromiumProcessArgs, isProfileInUse } from "../chromium/processes";
+import { readRegistry } from "./autoCleanup";
 
 export type ProfileInfo = {
   id: string;

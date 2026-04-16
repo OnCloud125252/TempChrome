@@ -1,8 +1,8 @@
 import { LocalStorage } from "@raycast/api";
+import { getChromiumProcessArgs, isProfileInUse } from "../chromium/processes";
+import { trashPath } from "../utils/trash";
 
-import { AUTO_CLEANUP_REGISTRY_KEY } from "./constants";
-import { getChromiumProcessArgs, isProfileInUse } from "./process-check";
-import { trashPath } from "./trash";
+const AUTO_CLEANUP_REGISTRY_KEY = "tempchrome.auto-cleanup-registry";
 
 export type Registry = Record<string, number>;
 

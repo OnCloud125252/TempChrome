@@ -12,12 +12,12 @@ import {
 } from "@raycast/api";
 import { showFailureToast, usePromise } from "@raycast/utils";
 import { type JSX, useEffect } from "react";
-import { readRegistry, sweepStaleProfiles, unmarkAutoCleanup, writeRegistry } from "./auto-cleanup";
-import { chromiumExists, clearQuarantine, launchChromium } from "./chromium";
-import { quickLaunch } from "./launch";
-import { getPreferences } from "./preferences";
-import { formatBytes, listProfiles, type ProfileInfo } from "./profiles";
-import { trashPath } from "./trash";
+import { chromiumExists, clearQuarantine, launchChromium } from "../chromium/launcher";
+import { quickLaunch } from "../launch";
+import { getPreferences } from "../preferences";
+import { trashPath } from "../utils/trash";
+import { readRegistry, sweepStaleProfiles, unmarkAutoCleanup, writeRegistry } from "./autoCleanup";
+import { formatBytes, listProfiles, type ProfileInfo } from "./listing";
 
 export default function ProfileList(): JSX.Element {
   const preferences = getPreferences();
