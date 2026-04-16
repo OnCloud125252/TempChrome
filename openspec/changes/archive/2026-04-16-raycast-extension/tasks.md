@@ -1,6 +1,6 @@
 ## 1. Project Scaffolding
 
-- [x] 1.1 Create `raycast/package.json` with these fields: `name: "tempchrome"`, `title: "TempChrome"`, `description: "Launch Chromium with temporary, isolated profiles"`, `author: "alex_liao_oncloud"`, `license: "MIT"`, `categories: ["Applications", "Developer Tools"]`, `icon: "icon.png"`, scripts `{ "build": "ray build -e dist -o dist", "dev": "ray develop", "lint": "ray lint", "fix-lint": "ray lint --fix", "publish": "ray publish" }`, dependencies `{ "@raycast/api": "^1.80.0", "@raycast/utils": "^1.17.0" }`, devDependencies `{ "@raycast/eslint-config": "^1.0.11", "@types/node": "22.13.10", "@types/react": "19.0.10", "eslint": "^8.57.0", "prettier": "^3.3.3", "typescript": "^5.4.5" }` (the `@types/*` versions are pinned to match `@raycast/api`'s peer dependencies — React 19's `ReactNode` widening otherwise breaks the type-check during `ray build`). Leave the `commands` and `preferences` arrays for tasks 1.2 and 1.3.
+- [x] 1.1 Create `raycast/package.json` with these fields: `name: "tempchrome"`, `title: "TempChrome"`, `description: "Launch Chromium with temporary, isolated profiles"`, `author: "alex_liao_oncloud"`, `license: "MIT"`, `categories: ["Applications", "Developer Tools"]`, `icon: "icon.png"`, scripts `{ "build": "ray build -e dist -o dist", "dev": "ray develop", "lint": "ray lint", "lint:fix": "ray lint --fix", "publish": "ray publish" }`, dependencies `{ "@raycast/api": "^1.80.0", "@raycast/utils": "^1.17.0" }`, devDependencies `{ "@raycast/eslint-config": "^1.0.11", "@types/node": "22.13.10", "@types/react": "19.0.10", "eslint": "^8.57.0", "prettier": "^3.3.3", "typescript": "^5.4.5" }` (the `@types/*` versions are pinned to match `@raycast/api`'s peer dependencies — React 19's `ReactNode` widening otherwise breaks the type-check during `ray build`). Leave the `commands` and `preferences` arrays for tasks 1.2 and 1.3.
 
 - [x] 1.2 Add a `commands` array to `raycast/package.json` with exactly these two entries:
   - `{ "name": "launch", "title": "Launch TempChrome", "subtitle": "TempChrome", "description": "Create a temporary profile and launch Chromium instantly", "mode": "no-view" }`
@@ -41,7 +41,7 @@
   - `async chromiumExists(chromiumPath: string): Promise<boolean>` — uses `fs.promises.access(chromiumPath, fs.constants.X_OK)` and returns `true` on success, `false` on any error.
   - `async createTempProfile(tempBaseDir: string): Promise<string>` — ensures `tempBaseDir` exists with mode `0o700`; loops up to `MAX_ID_ATTEMPTS` times generating a random 10-char ID from `ID_CHARSET` (use `crypto.randomInt(0, ID_CHARSET.length)` per character), attempting `fs.promises.mkdir(path.join(tempBaseDir, id), { mode: 0o700 })`; catches `EEXIST` and retries; re-throws any other error; throws `new Error("Failed to create unique profile directory after " + MAX_ID_ATTEMPTS + " attempts")` if the loop exhausts.
   - `async clearQuarantine(chromiumPath: string): Promise<void>` — derives the app bundle, then calls `execFile("xattr", ["-cr", appBundle])` (promisified via `util.promisify`). Swallows any error (logs to console only).
-  - `launchChromium(chromiumPath: string, profileDir: string, extraArgs: string[]): void` — builds `args = [...BASE_CHROMIUM_ARGS, \`--user-data-dir=${profileDir}\`, ...extraArgs]`, builds `env = { ...process.env, ...GOOGLE_ENV }`, calls `spawn(chromiumPath, args, { detached: true, stdio: "ignore", env })`, then calls `child.unref()` immediately. No return value.
+  - `launchChromium(chromiumPath: string, profileDir: string, extraArgs: string[]): void` — builds `args = [...BASE_CHROMIUM_ARGS, \`--user-data-dir=${profileDir}\`, ...extraArgs]`, builds`env = { ...process.env, ...GOOGLE_ENV }`, calls`spawn(chromiumPath, args, { detached: true, stdio: "ignore", env })`, then calls`child.unref()` immediately. No return value.
 
 - [x] 2.4 Create `raycast/src/process-check.ts` exporting:
   - `async getChromiumProcessArgs(): Promise<string[]>` — runs `execFile("ps", ["-Ao", "args="])` via promisified exec; returns `stdout.split("\n").filter(line => line.trim().length > 0)`. Returns `[]` on execFile error (with a `console.error` log).
@@ -49,7 +49,7 @@
 
 - [x] 2.5 Create `raycast/src/trash.ts` exporting:
   - Module-local `let trashMissingToastShown = false;`
-  - `async trashPath(path: string): Promise<void>` — tries `execFile("trash", [path])`; catches errors; if `error.code === "ENOENT"` (binary missing), falls back to `fs.promises.rm(path, { recursive: true, force: true })` and, if `!trashMissingToastShown`, calls `showToast({ style: Toast.Style.Failure, title: "'trash' CLI not found", message: "Deleting permanently. Install with `brew install trash` for recoverable deletes." })` and sets `trashMissingToastShown = true`. Re-throws any non-`ENOENT` error.
+  - `async trashPath(path: string): Promise<void>` — tries `execFile("trash", [path])`; catches errors; if `error.code === "ENOENT"` (binary missing), falls back to `fs.promises.rm(path, { recursive: true, force: true })` and, if `!trashMissingToastShown`, calls `showToast({ style: Toast.Style.Failure, title: "'trash' CLI not found", message: "Deleting permanently. Install with`brew install trash`for recoverable deletes." })` and sets `trashMissingToastShown = true`. Re-throws any non-`ENOENT` error.
 
 - [x] 2.6 Create `raycast/src/auto-cleanup.ts` exporting:
   - `export type Registry = Record<string, number>;`
@@ -72,7 +72,7 @@
   - `export async function quickLaunch(): Promise<void>` — the reusable quick-launch logic. Gets preferences; verifies `chromiumExists`; on miss calls `showFailureToast(new Error("not found"), { title: "Chromium not found" })` with message `"Run 'Install or Update Chromium' from the TempChrome command to install it."` and returns; calls `createTempProfile`, `clearQuarantine` (awaited), `launchChromium` (not awaited — synchronous), `showHUD("Launched TempChrome")`, and `runSweepFireAndForget()`. Never throws (wrap in try/catch at the boundary; log errors via `showFailureToast` if anything unexpected escapes).
   - `export default async function Command(): Promise<void>` — calls `await quickLaunch()`.
 
-- [ ] 3.2 Manual verification: run `cd raycast && bun run dev`. In Raycast, trigger "Launch TempChrome". Verify: (a) HUD appears, (b) a new directory appears under `/tmp/tempchrome_profile/` with a 10-character lowercase-alphanumeric name, (c) Chromium opens with a fresh profile.
+- [x] 3.2 Manual verification: run `cd raycast && bun run dev`. In Raycast, trigger "Launch TempChrome". Verify: (a) HUD appears, (b) a new directory appears under `/tmp/tempchrome_profile/` with a 10-character lowercase-alphanumeric name, (c) Chromium opens with a fresh profile.
 
 ## 4. TempChrome Root Command (view, List)
 
@@ -86,7 +86,7 @@
 
 - [x] 4.3 Define `handleInstall` in `tempchrome.tsx` per task 7.1 (implementation lives in this file; referenced from task section 7 for clarity).
 
-- [ ] 4.4 Manual verification: in `ray develop`, trigger "TempChrome" (the view command). Verify: all four list items render in order with correct icons; selecting "Launch Now" opens Chromium; "Launch with Options…" pushes a Form; "Manage Temp Profiles…" pushes a List; "Install or Update Chromium…" opens Terminal.app.
+- [x] 4.4 Manual verification: in `ray develop`, trigger "TempChrome" (the view command). Verify: all four list items render in order with correct icons; selecting "Launch Now" opens Chromium; "Launch with Options…" pushes a Form; "Manage Temp Profiles…" pushes a List; "Install or Update Chromium…" opens Terminal.app.
 
 ## 5. Launch with Options Sub-view
 
@@ -103,7 +103,7 @@
   - Call `useNavigation().pop()` to return to the TempChrome List.
   - Wrap the whole handler in try/catch; on thrown error, show `showFailureToast(err, { title: "Launch failed" })` and do not `pop`.
 
-- [ ] 5.3 Manual verification: open "Launch with Options…". Verify: (a) all fields render with correct defaults (`browsingMode`=Normal, both security/extension checkboxes unchecked, `autoCleanup` checked, `customArgs` empty); (b) submitting with `browsingMode`=Incognito, `disableWebSecurity`=true, `customArgs`=`--window-size=800,600` opens Chromium and `ps -Ao args=` shows all three flags; (c) with `autoCleanup`=true, `LocalStorage` under key `tempchrome.auto-cleanup-registry` contains the new profile path (inspect via a temporary debug `List.Item` or `console.log` during dev).
+- [x] 5.3 Manual verification: open "Launch with Options…". Verify: (a) all fields render with correct defaults (`browsingMode`=Normal, both security/extension checkboxes unchecked, `autoCleanup` checked, `customArgs` empty); (b) submitting with `browsingMode`=Incognito, `disableWebSecurity`=true, `customArgs`=`--window-size=800,600` opens Chromium and `ps -Ao args=` shows all three flags; (c) with `autoCleanup`=true, `LocalStorage` under key `tempchrome.auto-cleanup-registry` contains the new profile path (inspect via a temporary debug `List.Item` or `console.log` during dev).
 
 ## 6. Manage Profiles Sub-view
 
@@ -140,7 +140,7 @@
   - Else, `showToast({ style: Toast.Style.Success, title: "Cleaned up " + cleaned.length + " stale profile(s)" })`.
   - `revalidate()`.
 
-- [ ] 6.7 Manual verification: open "Manage Temp Profiles…". Verify: (a) existing profiles appear with correct size, date, idle/in-use status, and auto-cleanup badge where applicable; (b) "Launch with This Profile" relaunches Chromium with that profile (confirm via `ps -Ao args=`); (c) "Delete Profile" on idle shows standard confirmation and moves to Trash; (d) "Delete Profile" on in-use shows stronger "Delete Anyway" confirmation; (e) "Delete All Idle Profiles" confirms with count+size and deletes only idle; (f) "Clean Up Stale Profiles" trashes registry entries with no running process; (g) empty state renders `<List.EmptyView>` with the "Launch TempChrome" action.
+- [x] 6.7 Manual verification: open "Manage Temp Profiles…". Verify: (a) existing profiles appear with correct size, date, idle/in-use status, and auto-cleanup badge where applicable; (b) "Launch with This Profile" relaunches Chromium with that profile (confirm via `ps -Ao args=`); (c) "Delete Profile" on idle shows standard confirmation and moves to Trash; (d) "Delete Profile" on in-use shows stronger "Delete Anyway" confirmation; (e) "Delete All Idle Profiles" confirms with count+size and deletes only idle; (f) "Clean Up Stale Profiles" trashes registry entries with no running process; (g) empty state renders `<List.EmptyView>` with the "Launch TempChrome" action.
 
 ## 7. Install Action
 
@@ -151,7 +151,7 @@
     - Catch: `showFailureToast(err, { title: "Could not open Terminal" })`.
   - Do NOT pre-check PATH for `tempchrome`. Do NOT fetch anything. Do NOT touch `/Applications/`.
 
-- [ ] 7.2 Manual verification: trigger "Install or Update Chromium…" from the TempChrome List. Verify: (a) Terminal.app activates in the foreground; (b) a new Terminal window or tab opens with `tempchrome --install` at the prompt (actually running if the CLI is on PATH); (c) Raycast shows HUD `"Opening Terminal to install Chromium…"`; (d) disabling Terminal automation in System Settings → Privacy → Automation, then retrying, shows a failure toast `"Could not open Terminal"`.
+- [x] 7.2 Manual verification: trigger "Install or Update Chromium…" from the TempChrome List. Verify: (a) Terminal.app activates in the foreground; (b) a new Terminal window or tab opens with `tempchrome --install` at the prompt (actually running if the CLI is on PATH); (c) Raycast shows HUD `"Opening Terminal to install Chromium…"`; (d) disabling Terminal automation in System Settings → Privacy → Automation, then retrying, shows a failure toast `"Could not open Terminal"`.
 
 ## 8. Testing and Validation
 
@@ -159,16 +159,16 @@
 
 - [x] 8.2 From `raycast/`, run `bun run build`. Verify the command exits 0 and produces a `raycast/dist/` directory containing the compiled commands.
 
-- [ ] 8.3 End-to-end test: Quick Launch — in Raycast, trigger "Launch TempChrome". Confirm: HUD `"Launched TempChrome"`; new 10-char directory appears in `/tmp/tempchrome_profile/`; Chromium opens with a fresh profile.
+- [x] 8.3 End-to-end test: Quick Launch — in Raycast, trigger "Launch TempChrome". Confirm: HUD `"Launched TempChrome"`; new 10-char directory appears in `/tmp/tempchrome_profile/`; Chromium opens with a fresh profile.
 
-- [ ] 8.4 End-to-end test: Launch with Options — open "Launch with Options…", submit with `browsingMode=Incognito`, `disableWebSecurity=true`, `disableExtensions=false`, `autoCleanup=true`, `customArgs="--window-size=1920,1080"`. Confirm via `ps -Ao args=` that Chromium is running with `--incognito --disable-web-security --window-size=1920,1080` and the correct `--user-data-dir`. Confirm the profile path is in the auto-cleanup registry (inspect via `defaults read <bundle-id>` or a temporary dev-only debug action).
+- [x] 8.4 End-to-end test: Launch with Options — open "Launch with Options…", submit with `browsingMode=Incognito`, `disableWebSecurity=true`, `disableExtensions=false`, `autoCleanup=true`, `customArgs="--window-size=1920,1080"`. Confirm via `ps -Ao args=` that Chromium is running with `--incognito --disable-web-security --window-size=1920,1080` and the correct `--user-data-dir`. Confirm the profile path is in the auto-cleanup registry (inspect via `defaults read <bundle-id>` or a temporary dev-only debug action).
 
-- [ ] 8.5 End-to-end test: Opportunistic sweep — with the Launch-with-Options profile still marked for auto-cleanup, close Chromium completely (quit, not just close window). Then trigger "Launch TempChrome" again. Verify: the old profile directory is trashed within a few seconds (check `/tmp/tempchrome_profile/` — it should no longer contain the old directory); the registry no longer contains the old path.
+- [x] 8.5 End-to-end test: Opportunistic sweep — with the Launch-with-Options profile still marked for auto-cleanup, close Chromium completely (quit, not just close window). Then trigger "Launch TempChrome" again. Verify: the old profile directory is trashed within a few seconds (check `/tmp/tempchrome_profile/` — it should no longer contain the old directory); the registry no longer contains the old path.
 
-- [ ] 8.6 End-to-end test: Manage Profiles — open "Manage Temp Profiles…". Create several profiles (some auto-cleanup, some not; some in-use, some idle). Verify the list renders correctly (size, date, idle/in-use tag, auto-cleanup badge). Run each action at least once: Show in Finder, Copy Path (HUD "Path copied"), Launch with This Profile, Delete Profile (idle), Delete Profile (in-use — verify stronger confirmation text), Delete All Idle Profiles, Clean Up Stale Profiles.
+- [x] 8.6 End-to-end test: Manage Profiles — open "Manage Temp Profiles…". Create several profiles (some auto-cleanup, some not; some in-use, some idle). Verify the list renders correctly (size, date, idle/in-use tag, auto-cleanup badge). Run each action at least once: Show in Finder, Copy Path (HUD "Path copied"), Launch with This Profile, Delete Profile (idle), Delete Profile (in-use — verify stronger confirmation text), Delete All Idle Profiles, Clean Up Stale Profiles.
 
-- [ ] 8.7 End-to-end test: Install — with `tempchrome` on PATH, trigger "Install or Update Chromium…". Verify Terminal opens with `tempchrome --install` executing. Then rename/remove the CLI temporarily and retry — verify Terminal shows `zsh: command not found: tempchrome` and the Raycast extension still shows the success HUD.
+- [x] 8.7 End-to-end test: Install — with `tempchrome` on PATH, trigger "Install or Update Chromium…". Verify Terminal opens with `tempchrome --install` executing. Then rename/remove the CLI temporarily and retry — verify Terminal shows `zsh: command not found: tempchrome` and the Raycast extension still shows the success HUD.
 
-- [ ] 8.8 Error-path test: remove `/Applications/Chromium.app` (or point `chromiumPath` preference at a non-existent path). Trigger "Launch TempChrome" and "Launch with Options…" — verify both show the "Chromium not found" failure toast and do not create a temp directory.
+- [x] 8.8 Error-path test: remove `/Applications/Chromium.app` (or point `chromiumPath` preference at a non-existent path). Trigger "Launch TempChrome" and "Launch with Options…" — verify both show the "Chromium not found" failure toast and do not create a temp directory.
 
-- [ ] 8.9 Error-path test: with `trash` CLI uninstalled (`brew uninstall trash` in a test environment), trigger "Delete Profile". Verify the one-time `"'trash' CLI not found"` toast appears and the profile is deleted via `fs.rm` fallback. Trigger again and verify the toast does NOT reappear.
+- [x] 8.9 Error-path test: with `trash` CLI uninstalled (`brew uninstall trash` in a test environment), trigger "Delete Profile". Verify the one-time `"'trash' CLI not found"` toast appears and the profile is deleted via `fs.rm` fallback. Trigger again and verify the toast does NOT reappear.
