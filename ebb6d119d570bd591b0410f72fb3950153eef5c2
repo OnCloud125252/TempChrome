@@ -1,0 +1,137 @@
+raycast/src/profiles/listing.ts
+  h_fed3d72f60d150 1-2,4
+  33802cdd2cee530b 3
+raycast/src/options/LaunchOptionsForm.tsx
+  33802cdd2cee530b 10-11,14,20
+  2e5d71e996f72d00 1,3,6-9,12-13,16-17,21,23-24,34,49,60,67-69,75-76,84-86,92-93,102-107,110,114-119,123,127-184
+  162ac94e18f50858 22,185
+raycast/tsconfig.json
+  bb10b054cc0f30e8 6-10,12,21-22
+  162ac94e18f50858 19,23-24
+  h_fed3d72f60d150 20
+raycast/src/options/schema.ts
+  h_fed3d72f60d150 5,132,158,325
+  2e5d71e996f72d00 16-19,83,88-90,95-97,104-105,318-319
+  162ac94e18f50858 32,42,52,59-63,66-71,84-87,91-94,98-103,107-131,147-150,152-156,170-290,308,310,312,320-324
+raycast/src/launch.ts
+  33802cdd2cee530b 4,9,11
+  2e5d71e996f72d00 5-8,12,16-17,19,27,29-31,33,38
+raycast/src/profiles/autoCleanup.ts
+  33802cdd2cee530b 2-3,5
+raycast/CLAUDE.md
+  33802cdd2cee530b 25-48,56,61,65
+  7d6247d8f80aa106 67-68
+  h_fed3d72f60d150 51,58-59
+raycast/package.json
+  162ac94e18f50858 48-64,84,87-88,90,102,105-206
+raycast/src/chromium/processes.ts
+  h_fed3d72f60d150 1-2
+raycast/src/tempchrome.tsx
+  33802cdd2cee530b 7,9
+raycast/src/utils/trash.ts
+  h_fed3d72f60d150 1-3
+raycast/src/profiles/ProfileList.tsx
+  33802cdd2cee530b 16-18
+  h_fed3d72f60d150 20
+  2e5d71e996f72d00 15,19
+raycast/src/options/summarizeValues.ts
+  2e5d71e996f72d00 1-28
+raycast/src/options/recentLaunches.ts
+  2e5d71e996f72d00 1-33
+raycast/raycast-env.d.ts
+  162ac94e18f50858 23-26,29-30,33-52
+raycast/scripts/sync-options-schema.ts
+  162ac94e18f50858 65
+  h_fed3d72f60d150 62
+  33802cdd2cee530b 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "ebb6d119d570bd591b0410f72fb3950153eef5c2",
+  "prompts": {
+    "162ac94e18f50858": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e383e537-9f93-4576-bcb1-8754c32377ae",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 257,
+      "accepted_lines": 1150,
+      "overriden_lines": 0
+    },
+    "2e5d71e996f72d00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50ad5e9d-a2c7-4e4f-a896-d1929ebc60b3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 679,
+      "overriden_lines": 0
+    },
+    "33802cdd2cee530b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99debb96-aeba-4720-8080-7fcfb9dde0f9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 60,
+      "overriden_lines": 0
+    },
+    "7d6247d8f80aa106": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7fa1b3d4-a196-45b9-b3f3-057a82e56238",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "bb10b054cc0f30e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3b77c33-5ed6-402f-99f0-c0810536d30c",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "d0ee2525e759b2d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5460d9d-5107-4613-bccc-ed850d01ce29",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 782,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_fed3d72f60d150": {
+      "author": "OnCloud"
+    }
+  }
+}
