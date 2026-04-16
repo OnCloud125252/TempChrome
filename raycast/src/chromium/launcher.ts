@@ -76,7 +76,14 @@ export function launchChromium(
   profileDir: string,
   extraArgs: string[],
 ): void {
-  const args = [...BASE_CHROMIUM_ARGS, `--user-data-dir=${profileDir}`, ...extraArgs];
+  const logPath = path.join(profileDir, "chrome_debug.log");
+  const args = [
+    ...BASE_CHROMIUM_ARGS,
+    `--user-data-dir=${profileDir}`,
+    "--enable-logging",
+    `--log-file=${logPath}`,
+    ...extraArgs,
+  ];
   const env = { ...process.env, ...GOOGLE_ENV };
   const child = spawn(chromiumPath, args, {
     detached: true,

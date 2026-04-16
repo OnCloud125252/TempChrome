@@ -11,14 +11,18 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { LAUNCH_OPTIONS_SCHEMA, type OptionField } from "../src/options/schema";
+import {
+	isArgField,
+	LAUNCH_OPTIONS_SCHEMA,
+	type ArgField,
+} from "../src/options/schema";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const pkgPath = resolve(scriptDir, "..", "package.json");
 
 type ManifestPreference = Record<string, unknown>;
 
-function toManifestPreference(field: OptionField): ManifestPreference {
+function toManifestPreference(field: ArgField): ManifestPreference {
 	const base: ManifestPreference = {
 		name: field.name,
 		type: field.kind,
@@ -52,7 +56,9 @@ if (!launchCmd) {
 	throw new Error("`launch` command not found in package.json");
 }
 
-launchCmd.preferences = LAUNCH_OPTIONS_SCHEMA.map(toManifestPreference);
+launchCmd.preferences = LAUNCH_OPTIONS_SCHEMA.filter(isArgField).map(
+	toManifestPreference,
+);
 
 const next = `${JSON.stringify(pkg, null, 2)}\n`;
 

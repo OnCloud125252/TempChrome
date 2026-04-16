@@ -9,6 +9,17 @@ Raycast extension for launching Chromium with temporary, isolated profiles. Two 
 
 The Install action delegates to the `tempchrome` CLI via Terminal.app — install the CLI first (see the root project `README.md`).
 
+## UX Policy — toasts + shortcut hints are mandatory
+
+Raycast doesn't expose a customizable status bar, so we lean on **toasts** (or HUDs) and **keyboard shortcuts** to communicate state and discoverability. Every user-triggered action in `raycast/src/` MUST wire up **both**:
+
+1. **Feedback** — an animated → success/failure `Toast` for view commands, or `showHUD` for `no-view` commands. Failure paths go through `showFailureToast` from `@raycast/utils`. Bulk destructive ops must report quantitative detail (count, freed bytes) in the success toast.
+2. **A keyboard shortcut** — every `<Action>` except the single ⏎-primary per `<ActionPanel>` must declare `shortcut={...}` using the project's convention table.
+
+Additionally, every `<List>` / `<Form>` sets `navigationTitle` and uses `searchBarPlaceholder` as a status line where it helps (counts, totals). Root-list push actions expose their shortcut via `accessories={[{ tag: "⌘X" }]}` so users don't have to open the ⌘K panel to discover them.
+
+**The full convention table, anti-patterns, and reference implementations live in the `raycast-ux-feedback` skill** (`.claude/skills/raycast-ux-feedback/SKILL.md`). When adding or modifying any action, load that skill and follow its checklist.
+
 ## Development
 
 This extension uses [Bun](https://bun.sh) as its package manager and runner. npm is not supported.
@@ -27,7 +38,7 @@ bun run publish    # ray publish (requires a registered Raycast Store handle)
 ```
 src/
 ├── launch.ts                    # `launch` command entry — Quick Launch (no-view)
-├── tempchrome.tsx               # `tempchrome` command entry — root List view
+├── Tempchrome.tsx               # `tempchrome` command entry — root List view
 ├── preferences.ts               # getPreferences() wrapper around Raycast prefs
 ├── chromium/                    # Chromium binary + process inspection
 │   ├── constants.ts             # BASE_CHROMIUM_ARGS, GOOGLE_ENV, ID_* generation params
@@ -36,15 +47,26 @@ src/
 ├── profiles/                    # temp profile lifecycle + listing UI
 │   ├── autoCleanup.ts           # registry + sweep (AUTO_CLEANUP_REGISTRY_KEY is local)
 │   ├── listing.ts               # listProfiles, computeDirectorySize, formatBytes, ProfileInfo
-│   └── ProfileList.tsx          # list component rendered by tempchrome.tsx
+│   └── ProfileList.tsx          # list component rendered by Tempchrome.tsx
 ├── options/                     # shared UI schema for launch options
 │   ├── schema.ts                # LAUNCH_OPTIONS_SCHEMA + buildExtraArgs + types (single source of truth)
 │   └── LaunchOptionsForm.tsx    # form rendered by iterating the schema
+├── logs/                        # Chromium log viewer (tailer + parser + UI)
+│   ├── LogViewer.tsx            # <List> split-view tail of <profileDir>/chrome_debug.log
+│   ├── parser.ts                # parseChromiumLog, reconstructStructuredLine, row types
+│   ├── tailer.ts                # stat-based 250ms polling loop + truncation/seek-skip
+│   ├── dedupe.ts                # collapseConsecutive (×N badging), expandWithoutDedupe
+│   ├── severity.ts              # severityMeta(level) → icon + tint + label
+│   └── useProcessPresence.ts    # 2s interval wrapper around isProfileInUse
 └── utils/
-    └── trash.ts                 # trashPath helper (uses `trash` CLI, falls back to fs.rm)
+    └── fs.ts                    # removePath helper (wraps fs.promises.rm recursive+force)
 ```
 
-Command entries (`launch.ts`, `tempchrome.tsx`) stay at `src/` top-level because Raycast discovers them by matching each command's `name` in `package.json`. Everything else is grouped by domain.
+Command entries (`launch.ts`, `Tempchrome.tsx`) stay at `src/` top-level because Raycast discovers them by matching each command's `name` in `package.json`. Everything else is grouped by domain.
+
+## Logging
+
+Chromium is spawned with `--enable-logging=stderr --log-file=<profileDir>/chrome_debug.log`, so every launch writes a per-profile log file inside the temp profile directory. The log's lifetime is tied to the profile, so `--auto-cleanup` removes it for free. To inspect the log, open **Manage Temp Profiles…** and press **⌘L** on any profile row to push the `LogViewer`, which live-tails the file using a 250 ms stat-based poll loop and renders structured vs. raw lines in a split `<List>` + Detail pane. The same two flags are also applied in `cli/tempchrome.sh`.
 
 ## Preferences
 

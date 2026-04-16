@@ -1,6 +1,6 @@
 import { LocalStorage } from "@raycast/api";
 import { getChromiumProcessArgs, isProfileInUse } from "../chromium/processes";
-import { trashPath } from "../utils/trash";
+import { removePath } from "../utils/fs";
 
 const AUTO_CLEANUP_REGISTRY_KEY = "tempchrome.auto-cleanup-registry";
 
@@ -61,20 +61,20 @@ async function performSweep(): Promise<string[]> {
 
   const psLines = await getChromiumProcessArgs();
   const stalePaths = registeredPaths.filter((candidate) => !isProfileInUse(candidate, psLines));
-  const trashed: string[] = [];
+  const removed: string[] = [];
 
   for (const stalePath of stalePaths) {
     try {
-      await trashPath(stalePath);
+      await removePath(stalePath);
       delete registry[stalePath];
-      trashed.push(stalePath);
+      removed.push(stalePath);
     } catch (error) {
-      console.error("sweepStaleProfiles: failed to trash", stalePath, error);
+      console.error("sweepStaleProfiles: failed to remove", stalePath, error);
     }
   }
 
   await writeRegistry(registry);
-  return trashed;
+  return removed;
 }
 
 export function runSweepFireAndForget(): void {

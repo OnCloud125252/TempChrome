@@ -28,18 +28,20 @@ declare namespace Preferences {
   "browsingMode": "normal" | "incognito",
   /** App Mode - Requires a Start URL. Emits --app=<url> instead of the positional URL */
   "appMode": boolean,
-  /** Disable Extensions - Start Chromium without any installed extensions */
-  "disableExtensions": boolean,
-  /** Auto-Open DevTools - Passes --auto-open-devtools-for-tabs */
-  "autoOpenDevtools": boolean,
-  /** Disable Web Security - Disables same-origin policy (use with caution) */
-  "disableWebSecurity": boolean,
-  /** Ignore Certificate Errors - Skips TLS validation — use only for local dev */
-  "ignoreCertificateErrors": boolean,
   /** Window State - Initial window mode */
   "windowState": "normal" | "maximized" | "fullscreen" | "kiosk",
   /** Window Size - Initial window size (WxH or W,H) */
   "windowSize": string,
+  /** Window Position - Initial window position (X,Y) */
+  "windowPosition": string,
+  /** Disable Web Security - Disables same-origin policy (use with caution) */
+  "disableWebSecurity": boolean,
+  /** Ignore Certificate Errors - Skips TLS validation — use only for local dev */
+  "ignoreCertificateErrors": boolean,
+  /** Disable Extensions - Start Chromium without any installed extensions */
+  "disableExtensions": boolean,
+  /** Auto-Open DevTools - Passes --auto-open-devtools-for-tabs */
+  "autoOpenDevtools": boolean,
   /** Remote Debugging Port - Enable CDP on a port (1–65535); blank to disable */
   "remoteDebuggingPort": string,
   /** User Agent - Override the User-Agent string */
@@ -48,8 +50,6 @@ declare namespace Preferences {
   "proxyServer": string,
   /** Language - BCP-47 language tag (e.g. en-US, ja-JP) */
   "language": string,
-  /** Window Position - Initial window position (X,Y) */
-  "windowPosition": string,
   /** Custom Chromium Arguments - Extra CLI flags appended to every launch (whitespace-separated) */
   "customArgs": string
 }

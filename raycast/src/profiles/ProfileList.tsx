@@ -6,7 +6,7 @@ import {
   confirmAlert,
   Icon,
   List,
-  showHUD,
+  popToRoot,
   showToast,
   Toast,
 } from "@raycast/api";
@@ -14,8 +14,9 @@ import { showFailureToast, usePromise } from "@raycast/utils";
 import { type JSX, useEffect } from "react";
 import { chromiumExists, clearQuarantine, launchChromium } from "../chromium/launcher";
 import { quickLaunch } from "../launch";
+import LogViewer from "../logs/LogViewer";
 import { getPreferences } from "../preferences";
-import { trashPath } from "../utils/trash";
+import { removePath } from "../utils/fs";
 import { readRegistry, sweepStaleProfiles, unmarkAutoCleanup, writeRegistry } from "./autoCleanup";
 import { formatBytes, listProfiles, type ProfileInfo } from "./listing";
 
@@ -28,8 +29,8 @@ export default function ProfileList(): JSX.Element {
 
   useEffect(() => {
     sweepStaleProfiles()
-      .then((trashed) => {
-        if (trashed.length > 0) {
+      .then((removed) => {
+        if (removed.length > 0) {
           revalidate();
         }
       })
@@ -37,8 +38,13 @@ export default function ProfileList(): JSX.Element {
   }, [revalidate]);
 
   async function handleRelaunch(profile: ProfileInfo): Promise<void> {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: `Launching profile ${profile.id}…`,
+    });
     try {
       if (!(await chromiumExists(preferences.chromiumPath))) {
+        toast.hide();
         await showFailureToast(new Error("not found"), {
           title: "Chromium not found",
           message: "Run 'Install or Update Chromium' from the TempChrome command to install it.",
@@ -47,13 +53,31 @@ export default function ProfileList(): JSX.Element {
       }
       await clearQuarantine(preferences.chromiumPath);
       launchChromium(preferences.chromiumPath, profile.path, []);
-      await showHUD(`Launched with profile ${profile.id}`);
-      const trashed = await sweepStaleProfiles();
-      if (trashed.length > 0) {
+      toast.style = Toast.Style.Success;
+      toast.title = `Launched ${profile.id}`;
+      toast.message = formatBytes(profile.size);
+      const removed = await sweepStaleProfiles();
+      if (removed.length > 0) {
         revalidate();
       }
     } catch (error) {
+      toast.hide();
       await showFailureToast(error, { title: "Launch failed" });
+    }
+  }
+
+  async function handleQuickLaunchFromEmpty(): Promise<void> {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Launching TempChrome…",
+    });
+    const ok = await quickLaunch();
+    if (ok) {
+      toast.hide();
+      revalidate();
+    } else {
+      toast.style = Toast.Style.Failure;
+      toast.title = "Launch failed";
     }
   }
 
@@ -61,7 +85,7 @@ export default function ProfileList(): JSX.Element {
     const title = profile.inUse ? "Delete profile in use?" : "Delete profile?";
     const message = profile.inUse
       ? `${profile.id} (${formatBytes(profile.size)}) is currently in use by Chromium. Deleting it may corrupt the running session. Continue?`
-      : `${profile.id} (${formatBytes(profile.size)}) will be moved to Trash.`;
+      : `${profile.id} (${formatBytes(profile.size)}) will be permanently deleted.`;
     const primaryTitle = profile.inUse ? "Delete Anyway" : "Delete";
 
     const confirmed = await confirmAlert({
@@ -76,11 +100,19 @@ export default function ProfileList(): JSX.Element {
       return;
     }
 
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: `Deleting ${profile.id}…`,
+    });
     try {
-      await trashPath(profile.path);
+      await removePath(profile.path);
       await unmarkAutoCleanup(profile.path);
+      toast.style = Toast.Style.Success;
+      toast.title = `Deleted ${profile.id}`;
+      toast.message = `Freed ${formatBytes(profile.size)}`;
       revalidate();
     } catch (error) {
+      toast.hide();
       await showFailureToast(error, { title: "Delete failed" });
     }
   }
@@ -102,7 +134,7 @@ export default function ProfileList(): JSX.Element {
     const confirmed = await confirmAlert({
       title: `Delete ${idle.length} idle profile(s)?`,
       message:
-        `Total ${formatBytes(totalSize)} will be moved to Trash.` +
+        `Total ${formatBytes(totalSize)} will be permanently deleted.` +
         (inUse > 0 ? ` ${inUse} in-use profile(s) will be skipped.` : ""),
       primaryAction: {
         title: `Delete ${idle.length}`,
@@ -113,8 +145,12 @@ export default function ProfileList(): JSX.Element {
       return;
     }
 
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: `Deleting ${idle.length} profile(s)…`,
+    });
     try {
-      await Promise.all(idle.map((profile) => trashPath(profile.path)));
+      await Promise.all(idle.map((profile) => removePath(profile.path)));
       const registry = await readRegistry();
       let mutated = false;
       for (const profile of idle) {
@@ -127,42 +163,66 @@ export default function ProfileList(): JSX.Element {
         await writeRegistry(registry);
       }
 
-      await showToast({
-        style: Toast.Style.Success,
-        title: `Deleted ${idle.length} profile(s)`,
-        ...(inUse > 0 ? { message: `${inUse} skipped (in use)` } : {}),
-      });
+      toast.style = Toast.Style.Success;
+      toast.title = `Deleted ${idle.length} profile(s)`;
+      toast.message =
+        `Freed ${formatBytes(totalSize)}` + (inUse > 0 ? ` · ${inUse} in use skipped` : "");
       revalidate();
     } catch (error) {
+      toast.hide();
       await showFailureToast(error, { title: "Delete failed" });
     }
   }
 
   async function handleCleanupStale(): Promise<void> {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Sweeping stale profiles…",
+    });
     try {
       const cleaned = await sweepStaleProfiles();
       if (cleaned.length === 0) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: "Nothing to clean up",
-          message: "No stale auto-cleanup profiles found.",
-        });
+        toast.style = Toast.Style.Failure;
+        toast.title = "Nothing to clean up";
+        toast.message = "No stale auto-cleanup profiles found.";
       } else {
-        await showToast({
-          style: Toast.Style.Success,
-          title: `Cleaned up ${cleaned.length} stale profile(s)`,
-        });
+        toast.style = Toast.Style.Success;
+        toast.title = `Cleaned up ${cleaned.length} stale profile(s)`;
       }
       revalidate();
     } catch (error) {
+      toast.hide();
       await showFailureToast(error, { title: "Cleanup failed" });
     }
   }
 
+  async function handleRefresh(): Promise<void> {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Refreshing…",
+    });
+    revalidate();
+    toast.hide();
+  }
+
+  async function handleBack(): Promise<void> {
+    await popToRoot({ clearSearchBar: true });
+  }
+
   const profiles = data ?? [];
+  const totalSize = profiles.reduce((sum, profile) => sum + profile.size, 0);
+  const idleCount = profiles.filter((profile) => !profile.inUse).length;
 
   return (
-    <List isLoading={isLoading}>
+    <List
+      isLoading={isLoading}
+      navigationTitle="Temp Profiles"
+      searchBarPlaceholder={
+        profiles.length > 0
+          ? `${profiles.length} profile(s) · ${idleCount} idle · ${formatBytes(totalSize)}`
+          : "Filter profiles…"
+      }
+    >
       {!isLoading && profiles.length === 0 ? (
         <List.EmptyView
           title="No temporary profiles found"
@@ -173,10 +233,13 @@ export default function ProfileList(): JSX.Element {
                 // eslint-disable-next-line @raycast/prefer-title-case
                 title="Launch TempChrome"
                 icon={Icon.Rocket}
-                onAction={async () => {
-                  await quickLaunch();
-                  revalidate();
-                }}
+                onAction={handleQuickLaunchFromEmpty}
+              />
+              <Action
+                title="Refresh"
+                icon={Icon.ArrowClockwise}
+                shortcut={{ modifiers: ["cmd"], key: "r" }}
+                onAction={handleRefresh}
               />
             </ActionPanel>
           }
@@ -196,7 +259,7 @@ export default function ProfileList(): JSX.Element {
                         color: profile.inUse ? Color.Blue : Color.Orange,
                       },
                       tooltip: profile.inUse
-                        ? "This profile will be moved to Trash after Chromium exits."
+                        ? "This profile will be permanently deleted after Chromium exits."
                         : "Chromium has exited; this profile will be removed on the next sweep.",
                     },
                   ]
@@ -207,6 +270,7 @@ export default function ProfileList(): JSX.Element {
                     icon: Icon.CircleFilled,
                   }
                 : { tag: { value: "Idle", color: Color.SecondaryText } },
+              { tag: "⌘L" },
               { date: profile.createdAt },
             ]}
             actions={
@@ -216,8 +280,40 @@ export default function ProfileList(): JSX.Element {
                   icon={Icon.Rocket}
                   onAction={() => handleRelaunch(profile)}
                 />
-                <Action.ShowInFinder path={profile.path} />
-                <Action.CopyToClipboard title="Copy Path" content={profile.path} />
+                <Action.Push
+                  title="View Log"
+                  icon={Icon.Document}
+                  shortcut={{ modifiers: ["cmd"], key: "l" }}
+                  target={<LogViewer profileDir={profile.path} />}
+                />
+                <Action.ShowInFinder
+                  path={profile.path}
+                  shortcut={{ modifiers: ["cmd"], key: "o" }}
+                />
+                <Action.CopyToClipboard
+                  title="Copy Path"
+                  content={profile.path}
+                  shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                />
+                <Action
+                  title="Refresh List"
+                  icon={Icon.ArrowClockwise}
+                  shortcut={{ modifiers: ["cmd"], key: "r" }}
+                  onAction={handleRefresh}
+                />
+                <Action
+                  // eslint-disable-next-line @raycast/prefer-title-case
+                  title="Clean Up Stale Profiles"
+                  icon={Icon.Hammer}
+                  shortcut={{ modifiers: ["cmd", "shift"], key: "k" }}
+                  onAction={handleCleanupStale}
+                />
+                <Action
+                  title="Back to Menu"
+                  icon={Icon.ArrowLeft}
+                  shortcut={{ modifiers: ["cmd"], key: "[" }}
+                  onAction={handleBack}
+                />
                 <Action
                   title="Delete Profile"
                   icon={Icon.Trash}
@@ -231,12 +327,6 @@ export default function ProfileList(): JSX.Element {
                   style={Action.Style.Destructive}
                   shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }}
                   onAction={() => handleDeleteAll(profiles)}
-                />
-                <Action
-                  // eslint-disable-next-line @raycast/prefer-title-case
-                  title="Clean Up Stale Profiles"
-                  icon={Icon.Hammer}
-                  onAction={handleCleanupStale}
                 />
               </ActionPanel>
             }

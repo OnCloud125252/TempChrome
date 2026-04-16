@@ -1,26 +1,32 @@
-import { Action, ActionPanel, Form, Icon, List, showHUD, useNavigation } from "@raycast/api";
-import { showFailureToast } from "@raycast/utils";
-import { useEffect, useState, type JSX } from "react";
-
 import {
-  chromiumExists,
-  clearQuarantine,
-  createTempProfile,
-  launchChromium,
-} from "../chromium/launcher";
+  Action,
+  ActionPanel,
+  Clipboard,
+  Form,
+  Icon,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
+import { showFailureToast } from "@raycast/utils";
+import { Fragment, type JSX, useState } from "react";
+
+import { launchWithValues } from "../launch";
 import { getPreferences } from "../preferences";
-import { markForAutoCleanup, runSweepFireAndForget } from "../profiles/autoCleanup";
-import { clearRecent, loadRecent, pushRecent } from "./recentLaunches";
+import { pushRecent } from "./recentLaunches";
 import {
   buildExtraArgs,
   LAUNCH_OPTIONS_SCHEMA,
-  schemaDefaults,
   type LaunchOptionsValues,
   type OptionField,
+  schemaDefaults,
 } from "./schema";
-import { summarizeValues } from "./summarizeValues";
 
-function renderField(field: OptionField, defaults: LaunchOptionsValues): JSX.Element {
+function renderField(
+  field: OptionField,
+  defaults: LaunchOptionsValues,
+  index: number,
+): JSX.Element {
   const lookup = defaults as unknown as Record<string, string | boolean>;
 
   switch (field.kind) {
@@ -60,126 +66,102 @@ function renderField(field: OptionField, defaults: LaunchOptionsValues): JSX.Ele
           defaultValue={(lookup[field.name] as string) ?? field.default}
         />
       );
+    case "separator": {
+      const separatorKey = `separator-${index}-${field.title}`;
+      return (
+        <Fragment key={separatorKey}>
+          {index > 0 && (
+            <>
+              <Form.Description text="" />
+              <Form.Separator />
+            </>
+          )}
+          <Form.Description text="" />
+          <Form.Description title={field.title} text={field.description ?? ""} />
+        </Fragment>
+      );
+    }
   }
 }
 
-export default function LaunchOptionsForm(): JSX.Element {
-  const { pop, push } = useNavigation();
-  const [defaults, setDefaults] = useState<LaunchOptionsValues>(() => schemaDefaults());
+type LaunchOptionsFormProps = {
+  initialValues?: LaunchOptionsValues;
+};
+
+export default function LaunchOptionsForm(props: LaunchOptionsFormProps = {}): JSX.Element {
+  const { pop } = useNavigation();
   const [formKey, setFormKey] = useState(0);
+  const defaults = props.initialValues ?? schemaDefaults();
 
   async function handleSubmit(values: LaunchOptionsValues): Promise<void> {
+    const toast = await showToast({
+      style: Toast.Style.Animated,
+      title: "Launching…",
+    });
     try {
-      const extraArgs = buildExtraArgs(values);
-
-      const preferences = getPreferences();
-      if (!(await chromiumExists(preferences.chromiumPath))) {
-        await showFailureToast(new Error("not found"), {
-          title: "Chromium not found",
-          message: "Run 'Install or Update Chromium' from the TempChrome command to install it.",
-        });
+      const launched = await launchWithValues(values);
+      if (!launched) {
+        toast.style = Toast.Style.Failure;
+        toast.title = "Launch failed";
         return;
       }
-
-      const profileDir = await createTempProfile(preferences.tempBaseDir);
-      await clearQuarantine(preferences.chromiumPath);
-      launchChromium(preferences.chromiumPath, profileDir, extraArgs);
-
-      if (values.autoCleanup) {
-        await markForAutoCleanup(profileDir);
-      }
-
       await pushRecent(values);
-
-      await showHUD(values.autoCleanup ? "Launched (auto-cleanup enabled)" : "Launched");
-      runSweepFireAndForget();
+      toast.hide();
       pop();
     } catch (error) {
+      toast.hide();
       await showFailureToast(error, { title: "Launch failed" });
     }
   }
 
-  function applyRecent(entry: LaunchOptionsValues): void {
-    setDefaults(entry);
+  async function handleCopyCommand(values: LaunchOptionsValues): Promise<void> {
+    const preferences = getPreferences();
+    const args = [`--user-data-dir=${preferences.tempBaseDir}/<id>`, ...buildExtraArgs(values)];
+    const command = [shellQuote(preferences.chromiumPath), ...args.map(shellQuote)].join(" ");
+    await Clipboard.copy(command);
+    await showToast({
+      style: Toast.Style.Success,
+      title: "Copied Chromium command",
+      message: `${args.length} argument${args.length === 1 ? "" : "s"}`,
+    });
+  }
+
+  function handleReset(): void {
     setFormKey((current) => current + 1);
-    pop();
+    showToast({
+      style: Toast.Style.Success,
+      title: "Form reset to defaults",
+    });
   }
 
   return (
     <Form
       key={formKey}
+      navigationTitle="Launch with Options"
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Launch" onSubmit={handleSubmit} />
+          <Action.SubmitForm title="Launch" icon={Icon.Rocket} onSubmit={handleSubmit} />
+          <Action.SubmitForm
+            title="Copy Chromium Command"
+            icon={Icon.Clipboard}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+            onSubmit={handleCopyCommand}
+          />
           <Action
-            title="Fill with Recent…"
-            icon={Icon.Clock}
-            shortcut={{ modifiers: ["cmd"], key: "r" }}
-            onAction={() => push(<RecentLaunchesList onPick={applyRecent} />)}
+            title="Reset to Defaults"
+            icon={Icon.ArrowCounterClockwise}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "r" }}
+            onAction={handleReset}
           />
         </ActionPanel>
       }
     >
-      {LAUNCH_OPTIONS_SCHEMA.map((field) => renderField(field, defaults))}
+      {LAUNCH_OPTIONS_SCHEMA.map((field, index) => renderField(field, defaults, index))}
     </Form>
   );
 }
 
-function RecentLaunchesList(props: { onPick: (values: LaunchOptionsValues) => void }): JSX.Element {
-  const [entries, setEntries] = useState<LaunchOptionsValues[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadRecent().then((result) => {
-      if (!cancelled) setEntries(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function handleClear(): Promise<void> {
-    await clearRecent();
-    setEntries([]);
-  }
-
-  return (
-    <List
-      isLoading={entries === null}
-      navigationTitle="Recent Launches"
-      searchBarPlaceholder="Filter recent launches"
-    >
-      {entries !== null && entries.length === 0 && (
-        <List.EmptyView
-          icon={Icon.Clock}
-          title="No recent launches"
-          description="Launch from the form once and it will appear here."
-        />
-      )}
-      {entries?.map((entry, index) => (
-        <List.Item
-          key={index}
-          icon={Icon.Clock}
-          title={summarizeValues(entry)}
-          accessories={[{ text: `#${index + 1}` }]}
-          actions={
-            <ActionPanel>
-              <Action
-                title="Use These Settings"
-                icon={Icon.Checkmark}
-                onAction={() => props.onPick(entry)}
-              />
-              <Action
-                title="Clear All Recent"
-                icon={Icon.Trash}
-                style={Action.Style.Destructive}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "delete" }}
-                onAction={handleClear}
-              />
-            </ActionPanel>
-          }
-        />
-      ))}
-    </List>
-  );
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_\-./=:,@%+]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }

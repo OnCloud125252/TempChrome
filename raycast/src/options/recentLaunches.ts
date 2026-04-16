@@ -28,6 +28,14 @@ export async function clearRecent(): Promise<void> {
   await LocalStorage.removeItem(STORAGE_KEY);
 }
 
+export async function removeRecent(index: number): Promise<LaunchOptionsValues[]> {
+  const current = await loadRecent();
+  if (index < 0 || index >= current.length) return current;
+  const next = current.filter((_, position) => position !== index);
+  await LocalStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
 function valuesEqual(a: LaunchOptionsValues, b: LaunchOptionsValues): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
