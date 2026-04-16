@@ -21,6 +21,7 @@ TempChrome is a macOS shell utility that launches Chromium with temporary, isola
 
 ## Important Notes
 
+- Use `bun` for JavaScript/TypeScript development (e.g., Raycast extension) to leverage its speed and built-in features
 - **macOS-only** — the script uses macOS-specific paths (`/Applications/`, `xattr`, `open`) and architecture detection
 - Chromium profiles are created in `/tmp/tempchrome_profile/` with random IDs
 - The install target downloads from Google's official Chromium snapshot storage

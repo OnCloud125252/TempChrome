@@ -5,6 +5,12 @@ description: Build Raycast extensions with React and TypeScript. Use when the us
 
 # Raycast Extension Development
 
+## Package Manager: bun only
+
+This project uses **bun** exclusively. Do not introduce `npm`, `yarn`, or `pnpm` commands — not in scripts, docs, or examples. Translate any `npm run X` guidance to `bun run X`. The lockfile is `bun.lock` (text, Bun 1.2+); commit it, don't gitignore it.
+
+For the `ray` CLI itself (dev, build, lint, publish, login), see the companion `ray` skill.
+
 ## Quick Start
 
 1. Create project structure
@@ -47,13 +53,13 @@ my-extension/
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.83.1",
-    "@raycast/utils": "^1.17.0"
+    "@raycast/api": "^1.104.12",
+    "@raycast/utils": "^1.19.1"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.11",
-    "@types/node": "22.5.4",
-    "@types/react": "18.3.3",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
     "eslint": "^8.57.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4"
@@ -62,9 +68,20 @@ my-extension/
     "build": "ray build --skip-types -e dist -o dist",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
-    "lint": "ray lint"
+    "lint": "ray lint",
+    "publish": "ray publish"
   }
 }
+```
+
+**Type version pinning matters.** `@raycast/api@1.104+` declares `@types/react: 19.0.10` and `@types/node: 22.13.10` as **exact** peer deps. Using `^18.x` for react types will break `ray build` with a "Type 'bigint' is not assignable to type 'ReactNode'" error — that's React 19's widened `ReactNode` colliding with React 18 types.
+
+**React 19 removed the global `JSX` namespace.** With `jsx: "react-jsx"` and React 19 types, `function Command(): JSX.Element` fails to compile. Import the namespace explicitly:
+
+```tsx
+import type { JSX } from "react";
+
+export default function Command(): JSX.Element { ... }
 ```
 
 ## Command Modes
