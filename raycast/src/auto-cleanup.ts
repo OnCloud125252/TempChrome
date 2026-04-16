@@ -40,7 +40,19 @@ export async function unmarkAutoCleanup(profilePath: string): Promise<void> {
   }
 }
 
+let inFlightSweep: Promise<string[]> | null = null;
+
 export async function sweepStaleProfiles(): Promise<string[]> {
+  if (inFlightSweep) {
+    return inFlightSweep;
+  }
+  inFlightSweep = performSweep().finally(() => {
+    inFlightSweep = null;
+  });
+  return inFlightSweep;
+}
+
+async function performSweep(): Promise<string[]> {
   const registry = await readRegistry();
   const registeredPaths = Object.keys(registry);
   if (registeredPaths.length === 0) {

@@ -5,7 +5,7 @@ const execFileAsync = promisify(execFile);
 
 export async function getChromiumProcessArgs(): Promise<string[]> {
   try {
-    const { stdout } = await execFileAsync("ps", ["-Ao", "args="]);
+    const { stdout } = await execFileAsync("ps", ["-wwAo", "args="]);
     return stdout.split("\n").filter((line) => line.trim().length > 0);
   } catch (error) {
     console.error("getChromiumProcessArgs failed", error);

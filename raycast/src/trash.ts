@@ -10,6 +10,15 @@ let trashMissingToastShown = false;
 
 export async function trashPath(targetPath: string): Promise<void> {
   try {
+    await fs.promises.access(targetPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+
+  try {
     await execFileAsync("trash", [targetPath]);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
@@ -25,6 +34,13 @@ export async function trashPath(targetPath: string): Promise<void> {
         });
       }
       return;
+    }
+    try {
+      await fs.promises.access(targetPath);
+    } catch (accessError) {
+      if ((accessError as NodeJS.ErrnoException).code === "ENOENT") {
+        return;
+      }
     }
     throw error;
   }

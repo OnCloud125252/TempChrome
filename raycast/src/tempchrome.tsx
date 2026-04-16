@@ -1,14 +1,12 @@
-import { execFile } from "child_process";
-import { promisify } from "util";
-
-import type { JSX } from "react";
-
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { Action, ActionPanel, Icon, List, popToRoot, showHUD } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
+import type { JSX } from "react";
 
 import LaunchOptionsForm from "./LaunchOptionsForm";
-import ProfileList from "./ProfileList";
 import { quickLaunch } from "./launch";
+import ProfileList from "./ProfileList";
 
 const execFileAsync = promisify(execFile);
 

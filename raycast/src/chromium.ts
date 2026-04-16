@@ -1,9 +1,8 @@
-import { spawn } from "child_process";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import { randomInt } from "crypto";
-import * as fs from "fs";
-import * as path from "path";
+import { execFile, spawn } from "node:child_process";
+import { randomInt } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { promisify } from "node:util";
 
 import {
   BASE_CHROMIUM_ARGS,

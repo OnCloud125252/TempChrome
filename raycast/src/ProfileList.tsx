@@ -1,5 +1,3 @@
-import type { JSX } from "react";
-
 import {
   Action,
   ActionPanel,
@@ -13,33 +11,47 @@ import {
   Toast,
 } from "@raycast/api";
 import { showFailureToast, usePromise } from "@raycast/utils";
-
-import { chromiumExists, clearQuarantine, launchChromium } from "./chromium";
-import { formatBytes, listProfiles, ProfileInfo } from "./profiles";
-import { getPreferences } from "./preferences";
+import { type JSX, useEffect } from "react";
 import { readRegistry, sweepStaleProfiles, unmarkAutoCleanup, writeRegistry } from "./auto-cleanup";
+import { chromiumExists, clearQuarantine, launchChromium } from "./chromium";
 import { quickLaunch } from "./launch";
+import { getPreferences } from "./preferences";
+import { formatBytes, listProfiles, type ProfileInfo } from "./profiles";
 import { trashPath } from "./trash";
 
 export default function ProfileList(): JSX.Element {
-  const prefs = getPreferences();
+  const preferences = getPreferences();
   const { data, isLoading, revalidate } = usePromise(
-    async () => listProfiles(prefs.tempBaseDir),
+    async () => listProfiles(preferences.tempBaseDir),
     [],
   );
 
+  useEffect(() => {
+    sweepStaleProfiles()
+      .then((trashed) => {
+        if (trashed.length > 0) {
+          revalidate();
+        }
+      })
+      .catch((error) => console.error("mount sweep failed", error));
+  }, [revalidate]);
+
   async function handleRelaunch(profile: ProfileInfo): Promise<void> {
     try {
-      if (!(await chromiumExists(prefs.chromiumPath))) {
+      if (!(await chromiumExists(preferences.chromiumPath))) {
         await showFailureToast(new Error("not found"), {
           title: "Chromium not found",
           message: "Run 'Install or Update Chromium' from the TempChrome command to install it.",
         });
         return;
       }
-      await clearQuarantine(prefs.chromiumPath);
-      launchChromium(prefs.chromiumPath, profile.path, []);
+      await clearQuarantine(preferences.chromiumPath);
+      launchChromium(preferences.chromiumPath, profile.path, []);
       await showHUD(`Launched with profile ${profile.id}`);
+      const trashed = await sweepStaleProfiles();
+      if (trashed.length > 0) {
+        revalidate();
+      }
     } catch (error) {
       await showFailureToast(error, { title: "Launch failed" });
     }
@@ -55,7 +67,10 @@ export default function ProfileList(): JSX.Element {
     const confirmed = await confirmAlert({
       title,
       message,
-      primaryAction: { title: primaryTitle, style: Alert.ActionStyle.Destructive },
+      primaryAction: {
+        title: primaryTitle,
+        style: Alert.ActionStyle.Destructive,
+      },
     });
     if (!confirmed) {
       return;
@@ -174,10 +189,23 @@ export default function ProfileList(): JSX.Element {
             subtitle={formatBytes(profile.size)}
             accessories={[
               ...(profile.autoCleanup
-                ? [{ tag: { value: "Auto-cleanup", color: Color.Blue } }]
+                ? [
+                    {
+                      tag: {
+                        value: profile.inUse ? "Cleans on exit" : "Pending cleanup",
+                        color: profile.inUse ? Color.Blue : Color.Orange,
+                      },
+                      tooltip: profile.inUse
+                        ? "This profile will be moved to Trash after Chromium exits."
+                        : "Chromium has exited; this profile will be removed on the next sweep.",
+                    },
+                  ]
                 : []),
               profile.inUse
-                ? { tag: { value: "In use", color: Color.Green }, icon: Icon.CircleFilled }
+                ? {
+                    tag: { value: "In use", color: Color.Green },
+                    icon: Icon.CircleFilled,
+                  }
                 : { tag: { value: "Idle", color: Color.SecondaryText } },
               { date: profile.createdAt },
             ]}

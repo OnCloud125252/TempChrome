@@ -5,30 +5,61 @@ import { showFailureToast } from "@raycast/utils";
 
 import { chromiumExists, clearQuarantine, createTempProfile, launchChromium } from "./chromium";
 import { getPreferences } from "./preferences";
+import {
+  LAUNCH_OPTIONS_SCHEMA,
+  buildExtraArgs,
+  type LaunchOptionsValues,
+  type OptionField,
+} from "./launchOptionsSchema";
 import { markForAutoCleanup, runSweepFireAndForget } from "./auto-cleanup";
 
-type FormValues = {
-  browsingMode: "normal" | "incognito";
-  disableWebSecurity: boolean;
-  disableExtensions: boolean;
-  autoCleanup: boolean;
-  customArgs: string;
-};
+function renderField(field: OptionField): JSX.Element {
+  switch (field.kind) {
+    case "dropdown":
+      return (
+        <Form.Dropdown
+          key={field.name}
+          id={field.name}
+          title={field.title}
+          info={field.description}
+          defaultValue={field.default}
+        >
+          {field.options.map((option) => (
+            <Form.Dropdown.Item key={option.value} value={option.value} title={option.title} />
+          ))}
+        </Form.Dropdown>
+      );
+    case "checkbox":
+      return (
+        <Form.Checkbox
+          key={field.name}
+          id={field.name}
+          title={field.title}
+          label={field.label}
+          info={field.description}
+          defaultValue={field.default}
+        />
+      );
+    case "textfield":
+      return (
+        <Form.TextField
+          key={field.name}
+          id={field.name}
+          title={field.title}
+          info={field.description}
+          placeholder={field.placeholder}
+          defaultValue={field.default}
+        />
+      );
+  }
+}
 
 export default function LaunchOptionsForm(): JSX.Element {
   const { pop } = useNavigation();
 
-  async function handleSubmit(values: FormValues): Promise<void> {
+  async function handleSubmit(values: LaunchOptionsValues): Promise<void> {
     try {
-      const extraArgs: string[] = [
-        ...(values.browsingMode === "incognito" ? ["--incognito"] : []),
-        ...(values.disableWebSecurity ? ["--disable-web-security"] : []),
-        ...(values.disableExtensions ? ["--disable-extensions"] : []),
-        ...values.customArgs
-          .trim()
-          .split(/\s+/)
-          .filter((token) => token.length > 0),
-      ];
+      const extraArgs = buildExtraArgs(values);
 
       const prefs = getPreferences();
       if (!(await chromiumExists(prefs.chromiumPath))) {
@@ -63,22 +94,7 @@ export default function LaunchOptionsForm(): JSX.Element {
         </ActionPanel>
       }
     >
-      <Form.Dropdown id="browsingMode" title="Browsing Mode" defaultValue="normal">
-        <Form.Dropdown.Item value="normal" title="Normal" />
-        <Form.Dropdown.Item value="incognito" title="Incognito" />
-      </Form.Dropdown>
-      <Form.Separator />
-      <Form.Checkbox id="disableWebSecurity" label="Disable Web Security" defaultValue={false} />
-      <Form.Checkbox id="disableExtensions" label="Disable Extensions" defaultValue={false} />
-      <Form.Separator />
-      <Form.Checkbox id="autoCleanup" label="Auto-Cleanup After Close" defaultValue={true} />
-      <Form.Separator />
-      <Form.TextField
-        id="customArgs"
-        title="Custom Arguments"
-        placeholder="--flag1 --flag2=value"
-        defaultValue=""
-      />
+      {LAUNCH_OPTIONS_SCHEMA.map(renderField)}
     </Form>
   );
 }

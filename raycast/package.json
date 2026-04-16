@@ -4,14 +4,24 @@
   "description": "Launch Chromium with temporary, isolated profiles",
   "author": "alex_liao_oncloud",
   "license": "MIT",
-  "categories": ["Applications", "Developer Tools"],
+  "categories": [
+    "Applications",
+    "Developer Tools"
+  ],
   "icon": "icon.png",
   "scripts": {
     "build": "ray build -e dist -o dist",
     "dev": "ray develop",
     "lint": "ray lint",
-    "fix-lint": "ray lint --fix",
-    "publish": "ray publish"
+    "lint:fix": "ray lint --fix",
+    "publish": "ray publish",
+    "prepare": "node scripts/prepare.mjs",
+    "sync:options": "bun scripts/sync-options-schema.ts",
+    "prebuild": "bun run sync:options",
+    "predev": "bun run sync:options",
+    "prelint": "bun run sync:options",
+    "prelint:fix": "bun run sync:options",
+    "prepublish": "bun run sync:options"
   },
   "dependencies": {
     "@raycast/api": "^1.80.0",
@@ -28,10 +38,66 @@
   "commands": [
     {
       "name": "launch",
-      "title": "Launch TempChrome",
+      "title": "Quick Launch TempChrome",
       "subtitle": "TempChrome",
       "description": "Create a temporary profile and launch Chromium instantly",
-      "mode": "no-view"
+      "mode": "no-view",
+      "preferences": [
+        {
+          "name": "browsingMode",
+          "type": "dropdown",
+          "required": false,
+          "title": "Browsing Mode",
+          "description": "Default browsing mode",
+          "default": "normal",
+          "data": [
+            {
+              "title": "Normal",
+              "value": "normal"
+            },
+            {
+              "title": "Incognito",
+              "value": "incognito"
+            }
+          ]
+        },
+        {
+          "name": "disableWebSecurity",
+          "type": "checkbox",
+          "required": false,
+          "title": "Disable Web Security",
+          "description": "Disables same-origin policy (use with caution)",
+          "default": false,
+          "label": "Pass --disable-web-security on launch"
+        },
+        {
+          "name": "disableExtensions",
+          "type": "checkbox",
+          "required": false,
+          "title": "Disable Extensions",
+          "description": "Start Chromium without any installed extensions",
+          "default": false,
+          "label": "Pass --disable-extensions on launch"
+        },
+        {
+          "name": "autoCleanup",
+          "type": "checkbox",
+          "required": false,
+          "title": "Auto-Cleanup",
+          "description": "Automatically delete the temp profile once the Chromium window is closed",
+          "default": true,
+          "label": "Mark profile for cleanup after Chromium closes"
+        },
+        {
+          "name": "customArgs",
+          "type": "textfield",
+          "required": false,
+          "title": "Custom Chromium Arguments",
+          "description": "Extra CLI flags appended to every launch (whitespace-separated)",
+          "default": "",
+          "placeholder": "--flag1 --flag2=value"
+        }
+      ]
     },
     {
       "name": "tempchrome",

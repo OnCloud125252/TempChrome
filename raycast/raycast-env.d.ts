@@ -19,7 +19,18 @@ declare type Preferences = ExtensionPreferences
 
 declare namespace Preferences {
   /** Preferences accessible in the `launch` command */
-  export type Launch = ExtensionPreferences & {}
+  export type Launch = ExtensionPreferences & {
+  /** Browsing Mode - Default browsing mode */
+  "browsingMode": "normal" | "incognito",
+  /** Disable Web Security - Disables same-origin policy (use with caution) */
+  "disableWebSecurity": boolean,
+  /** Disable Extensions - Start Chromium without any installed extensions */
+  "disableExtensions": boolean,
+  /** Auto-Cleanup - Automatically delete the temp profile once the Chromium window is closed */
+  "autoCleanup": boolean,
+  /** Custom Chromium Arguments - Extra CLI flags appended to every launch (whitespace-separated) */
+  "customArgs": string
+}
   /** Preferences accessible in the `tempchrome` command */
   export type Tempchrome = ExtensionPreferences & {}
 }

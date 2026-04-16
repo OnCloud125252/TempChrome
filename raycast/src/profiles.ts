@@ -72,7 +72,9 @@ export async function listProfiles(tempBaseDir: string): Promise<ProfileInfo[]> 
         autoCleanup: profilePath in registry,
       });
     } catch (error) {
-      console.error("listProfiles: failed to stat", profilePath, error);
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        console.error("listProfiles: failed to stat", profilePath, error);
+      }
     }
   }
 
