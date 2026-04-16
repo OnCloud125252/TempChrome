@@ -1,0 +1,19 @@
+import { execFile } from "child_process";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
+
+export async function getChromiumProcessArgs(): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync("ps", ["-Ao", "args="]);
+    return stdout.split("\n").filter((line) => line.trim().length > 0);
+  } catch (error) {
+    console.error("getChromiumProcessArgs failed", error);
+    return [];
+  }
+}
+
+export function isProfileInUse(profilePath: string, psLines: string[]): boolean {
+  const needle = `--user-data-dir=${profilePath}`;
+  return psLines.some((line) => line.includes(needle));
+}
