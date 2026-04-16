@@ -1,0 +1,45 @@
+raycast/src/tempchrome.tsx
+  ede9b83a5ee2bc5c 1-72
+raycast/src/constants.ts
+  ede9b83a5ee2bc5c 1-18
+raycast/src/chromium.ts
+  ede9b83a5ee2bc5c 1-62,64-88
+raycast/src/ProfileList.tsx
+  ede9b83a5ee2bc5c 1-220
+raycast/src/profiles.ts
+  ede9b83a5ee2bc5c 1-97
+raycast/package.json
+  ede9b83a5ee2bc5c 5,10,22-23
+raycast/src/trash.ts
+  ede9b83a5ee2bc5c 1-31
+raycast/src/process-check.ts
+  ede9b83a5ee2bc5c 1-19
+raycast/src/auto-cleanup.ts
+  ede9b83a5ee2bc5c 1-70
+raycast/src/preferences.ts
+  ede9b83a5ee2bc5c 1-10
+raycast/src/launch.ts
+  ede9b83a5ee2bc5c 1-32
+raycast/src/LaunchOptionsForm.tsx
+  ede9b83a5ee2bc5c 1-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "3c8775ff646fd0395463b8039857bf95c24792dd",
+  "prompts": {
+    "ede9b83a5ee2bc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90910201-9d0a-4353-8d3c-4add291190c6",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 959,
+      "total_deletions": 37,
+      "accepted_lines": 936,
+      "overriden_lines": 1
+    }
+  }
+}
