@@ -1,0 +1,23 @@
+.claude/skills/ray/SKILL.md
+  ede9b83a5ee2bc5c 1-146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "5d38e063061641f5482ff0f1448a01be565bf561",
+  "prompts": {
+    "ede9b83a5ee2bc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90910201-9d0a-4353-8d3c-4add291190c6",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 192,
+      "overriden_lines": 0
+    }
+  }
+}
