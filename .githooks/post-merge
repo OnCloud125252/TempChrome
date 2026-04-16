@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TempChrome — Post-Merge Hook
+# Runs `bun install` inside raycast/ when its lockfile or manifest
+# changed during the merge.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Colors
+_CLI_RED='\033[0;31m'
+_CLI_GREEN='\033[0;32m'
+_CLI_YELLOW='\033[0;33m'
+_CLI_CYAN='\033[0;36m'
+_CLI_PURPLE='\033[0;35m'
+_CLI_NC='\033[0m'
+
+_CLI_WIDTH="${COLUMNS:-$( (tput cols </dev/tty) 2>/dev/null || tput cols 2>/dev/null || echo 80)}"
+
+_CLI_CHECK="${_CLI_GREEN}[✓]${_CLI_NC}"
+_CLI_CROSS="${_CLI_RED}[✗]${_CLI_NC}"
+_CLI_WARN="${_CLI_YELLOW}[!]${_CLI_NC}"
+_CLI_INFO="${_CLI_CYAN}[i]${_CLI_NC}"
+
+log_info()    { echo -e "$_CLI_INFO $1"; }
+log_success() { echo -e "$_CLI_CHECK $1"; }
+log_warn()    { echo -e "$_CLI_WARN $1"; }
+log_error()   { echo -e "$_CLI_CROSS $1"; }
+
+print_divider() {
+  local color="${1:-$_CLI_PURPLE}" label="${2:-}"
+  local width="$_CLI_WIDTH"
+  if [[ -n "$label" ]]; then
+    local padding=$((width - ${#label} - 6))
+    local fill
+    printf -v fill '%*s' "$padding" ''
+    printf '%b━━━━[%s]%s%b\n' "$color" "$label" "${fill// /━}" "$_CLI_NC"
+  else
+    local fill
+    printf -v fill '%*s' "$width" ''
+    printf '%b%s%b\n' "$color" "${fill// /━}" "$_CLI_NC"
+  fi
+}
+
+# Files changed during this merge.
+changed_files() {
+  git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null
+}
+
+# ── Main ─────────────────────────────────────────────────────────
+
+echo ""
+print_divider "$_CLI_PURPLE" "Post-Merge"
+echo ""
+
+CHANGED=$(changed_files)
+
+# Run `bun install` inside raycast/ when its lockfile or manifest moved.
+if echo "$CHANGED" | grep -qE "^raycast/(bun\.lock|package\.json)$"; then
+  log_info "Raycast dependencies changed — running ${_CLI_CYAN}bun install${_CLI_NC} in raycast/..."
+  if (cd raycast && bun install); then
+    echo ""
+    log_success "Raycast dependencies updated"
+  else
+    echo ""
+    log_error "bun install failed — run ${_CLI_CYAN}(cd raycast && bun install)${_CLI_NC} manually"
+  fi
+else
+  log_success "Raycast dependencies unchanged — skipping install"
+fi
+
+echo ""
+print_divider "$_CLI_PURPLE"
+echo ""

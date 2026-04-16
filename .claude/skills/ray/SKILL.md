@@ -30,7 +30,7 @@ This project uses **bun** as its package manager and script runner. `npm install
 | `bun install`       | —                               | Resolve dependencies, write `bun.lock`     |
 | `bun run dev`       | `ray develop` (alias `ray dev`) | Live-reload extension in Raycast           |
 | `bun run lint`      | `ray lint`                      | Validate manifest, ESLint, Prettier        |
-| `bun run fix-lint`  | `ray lint --fix`                | Auto-fix lint/format issues                |
+| `bun run lint:fix`  | `ray lint --fix`                | Auto-fix lint/format issues                |
 | `bun run build`     | `ray build -e dist -o dist`     | Production build into `raycast/dist/`      |
 | `bun run publish`   | `ray publish`                   | Submit extension to Raycast Store          |
 | `bunx ray login`    | `ray login`                     | Authenticate with your Raycast account     |

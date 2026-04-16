@@ -21,6 +21,9 @@
     - [Why download from snapshots instead of Homebrew?](#why-download-from-snapshots-instead-of-homebrew)
     - [Can I use this with regular Chrome instead of Chromium?](#can-i-use-this-with-regular-chrome-instead-of-chromium)
   - [Installation](#installation)
+  - [Development](#development)
+    - [Git Hooks](#git-hooks)
+    - [Optional Tooling](#optional-tooling)
 
 ## Overview
 
@@ -146,3 +149,40 @@ cp cli/tempchrome.sh /usr/local/bin/tempchrome
 ```bash
 tempchrome --install
 ```
+
+## Development
+
+### Git Hooks
+
+TempChrome ships a set of git hooks under `.githooks/` that enforce secret scanning, shell-script linting, and Raycast-extension build integrity. They activate automatically the first time you run `bun install` inside `raycast/`:
+
+```bash
+(cd raycast && bun install)
+```
+
+That runs `raycast/scripts/prepare.mjs`, which sets `core.hooksPath` to `.githooks` in your local git config. Confirm with:
+
+```bash
+git config --get core.hooksPath   # → .githooks
+```
+
+| Hook         | What it runs                                                                            |
+|--------------|-----------------------------------------------------------------------------------------|
+| `pre-commit` | `gitleaks` (staged) · `shellcheck` (staged `.sh`) · `ray lint --fix` (re-stages fixes)  |
+| `pre-push`   | `gitleaks` (push range) · `shellcheck` (all tracked `.sh`) · `ray lint` · `ray build`   |
+| `post-merge` | `bun install` inside `raycast/` when `raycast/bun.lock` or `raycast/package.json` moved |
+
+`ray build` also performs a full TypeScript compile, so it doubles as the typecheck gate.
+
+In rare emergencies you can bypass the commit or push hook with `--no-verify`. Prefer fixing the underlying issue — the checks exist to stop broken or secret-leaking commits from reaching the remote.
+
+### Optional Tooling
+
+These tools are referenced by the hooks. They're optional — the hooks warn and skip when missing — but installing them restores the full pipeline.
+
+```bash
+brew install gitleaks    # secret scanner used by pre-commit & pre-push
+brew install shellcheck  # shell linter used by pre-commit & pre-push
+```
+
+Bun is required to work on the Raycast extension. Install via [bun.sh](https://bun.sh) or `brew install oven-sh/bun/bun`.

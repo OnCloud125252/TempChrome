@@ -67,7 +67,7 @@ my-extension/
   "scripts": {
     "build": "ray build --skip-types -e dist -o dist",
     "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
+    "lint:fix": "ray lint --fix",
     "lint": "ray lint",
     "publish": "ray publish"
   }
@@ -585,7 +585,7 @@ bun install
 bun run dev
 
 # Lint and fix
-bun run fix-lint
+bun run lint:fix
 
 # Build for production
 bun run build

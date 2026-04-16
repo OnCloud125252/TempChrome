@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TempChrome — Pre-Commit Hook
+# Runs gitleaks, shellcheck on staged shell scripts, and ray lint --fix
+# on the raycast extension. Auto-fixes from lint are re-staged.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TOTAL_STEPS=3
+
+# Colors
+_CLI_RED='\033[0;31m'
+_CLI_GREEN='\033[0;32m'
+_CLI_YELLOW='\033[0;33m'
+_CLI_CYAN='\033[0;36m'
+_CLI_GRAY='\033[0;90m'
+_CLI_PURPLE='\033[0;35m'
+_CLI_NC='\033[0m'
+
+_CLI_WIDTH="${COLUMNS:-$( (tput cols </dev/tty) 2>/dev/null || tput cols 2>/dev/null || echo 80)}"
+
+_CLI_CHECK="${_CLI_GREEN}[✓]${_CLI_NC}"
+_CLI_CROSS="${_CLI_RED}[✗]${_CLI_NC}"
+_CLI_WARN="${_CLI_YELLOW}[!]${_CLI_NC}"
+_CLI_INFO="${_CLI_CYAN}[i]${_CLI_NC}"
+
+log_info()    { echo -e "$_CLI_INFO $1"; }
+log_success() { echo -e "$_CLI_CHECK $1"; }
+log_warn()    { echo -e "$_CLI_WARN $1"; }
+log_error()   { echo -e "$_CLI_CROSS $1"; }
+
+print_divider() {
+  local color="${1:-$_CLI_PURPLE}" label="${2:-}"
+  local width="$_CLI_WIDTH"
+  if [[ -n "$label" ]]; then
+    local padding=$((width - ${#label} - 6))
+    local fill
+    printf -v fill '%*s' "$padding" ''
+    printf '%b━━━━[%s]%s%b\n' "$color" "$label" "${fill// /━}" "$_CLI_NC"
+  else
+    local fill
+    printf -v fill '%*s' "$width" ''
+    printf '%b%s%b\n' "$color" "${fill// /━}" "$_CLI_NC"
+  fi
+}
+
+run_step() {
+  local step_num="$1"
+  local step_name="$2"
+  local step_cmd="$3"
+  local tmp_out
+  tmp_out=$(mktemp)
+
+  # shellcheck disable=SC2059 # colors are our own constants, not user input
+  printf "${_CLI_GRAY}[·]${_CLI_NC} ${_CLI_GRAY}[${step_num}/${TOTAL_STEPS}]${_CLI_NC} ${step_name}..."
+
+  if eval "$step_cmd" >"$tmp_out" 2>&1; then
+    # shellcheck disable=SC2059
+    printf "\r${_CLI_CHECK} ${_CLI_GRAY}[${step_num}/${TOTAL_STEPS}]${_CLI_NC} ${step_name}\n"
+    rm -f "$tmp_out"
+    return 0
+  else
+    printf "\n\n"
+    cat "$tmp_out"
+    rm -f "$tmp_out"
+    echo ""
+    log_error "${_CLI_GRAY}[${step_num}/${TOTAL_STEPS}]${_CLI_NC} ${step_name} ${_CLI_RED}failed${_CLI_NC}"
+    echo ""
+    log_info "Fix the errors above, then try committing again."
+    echo ""
+    print_divider "$_CLI_RED"
+    echo ""
+    return 1
+  fi
+}
+
+# ── Staged-File Helpers ──────────────────────────────────────────
+# After ray lint --fix, re-stage only the files that were already staged
+# so the fixes land in the commit. Unstaged files stay untouched.
+
+_staged_files=""
+_staged_sh_files=()
+_staged_raycast_files=()
+
+snapshot_staged_files() {
+  _staged_files=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+
+  _staged_sh_files=()
+  _staged_raycast_files=()
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    case "$f" in
+      *.sh) _staged_sh_files+=("$f") ;;
+    esac
+    case "$f" in
+      raycast/*) _staged_raycast_files+=("$f") ;;
+    esac
+  done <<< "$_staged_files"
+}
+
+stage_lint_fixes() {
+  [[ ${#_staged_raycast_files[@]} -eq 0 ]] && return
+
+  # Re-add only the previously-staged raycast files (picks up lint fixes).
+  printf '%s\n' "${_staged_raycast_files[@]}" | xargs git add --
+  log_info "Lint fixes staged into your commit"
+}
+
+# ── Check Functions ──────────────────────────────────────────────
+
+check_shellcheck_staged() {
+  if [[ ${#_staged_sh_files[@]} -eq 0 ]]; then
+    echo "No staged .sh files — skipping"
+    return 0
+  fi
+
+  if ! command -v shellcheck &>/dev/null; then
+    echo "shellcheck not installed — install with: brew install shellcheck"
+    return 1
+  fi
+
+  shellcheck "${_staged_sh_files[@]}"
+}
+
+check_raycast_lint() {
+  if [[ ${#_staged_raycast_files[@]} -eq 0 ]]; then
+    echo "No staged files under raycast/ — skipping"
+    return 0
+  fi
+
+  (cd raycast && bun run lint:fix)
+}
+
+# ── Main ─────────────────────────────────────────────────────────
+
+echo ""
+print_divider "$_CLI_PURPLE" "Pre-Commit Checks"
+echo ""
+
+snapshot_staged_files
+
+# 1. Secret detection with gitleaks (staged changes)
+if command -v gitleaks &>/dev/null; then
+  run_step 1 "gitleaks (secret scan)" "gitleaks protect --staged --no-banner" || exit 1
+else
+  log_warn "${_CLI_GRAY}[1/${TOTAL_STEPS}]${_CLI_NC} gitleaks not installed — skipping"
+  log_info "Install with: ${_CLI_CYAN}brew install gitleaks${_CLI_NC}"
+  echo ""
+fi
+
+# 2. shellcheck on staged .sh files
+run_step 2 "shellcheck (staged .sh)" "check_shellcheck_staged" || exit 1
+
+# 3. ray lint --fix on raycast/ (with re-stage)
+run_step 3 "ray lint --fix" "check_raycast_lint" || exit 1
+stage_lint_fixes
+
+echo ""
+log_success "All pre-commit checks passed"
+echo ""
+print_divider "$_CLI_PURPLE"
+echo ""
