@@ -1,0 +1,247 @@
+openspec/changes/archive/2026-04-17-broaden-error-visibility/design.md
+  17645176bb43cac1 1-175
+openspec/changes/archive/2026-04-17-broaden-error-visibility/tasks.md
+  17645176bb43cac1 1-54
+openspec/changes/archive/2026-04-18-harden-install-and-launch/.openspec.yaml
+  17645176bb43cac1 1-2
+openspec/changes/simplify-chromium-path-preference/specs/quick-launch/spec.md
+  aa68f9711e5635b7 1-100
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/specs/quick-launch/spec.md
+  17645176bb43cac1 1-31
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/tasks.md
+  17645176bb43cac1 1-82
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/specs/profile-manager/spec.md
+  17645176bb43cac1 1-23
+openspec/changes/archive/2026-04-18-move-installer-to-raycast/specs/quick-launch/spec.md
+  17645176bb43cac1 1-24
+openspec/changes/archive/2026-04-18-harden-install-and-launch/proposal.md
+  17645176bb43cac1 1-30
+openspec/changes/archive/2026-04-18-harden-install-and-launch/tasks.md
+  17645176bb43cac1 1-55
+openspec/changes/archive/2026-04-17-broaden-error-visibility/proposal.md
+  17645176bb43cac1 1-31
+openspec/changes/simplify-chromium-path-preference/tasks.md
+  aa68f9711e5635b7 1-2,5-7,13-15,22-24,30-32,37-39,41-43,49-51,55-57
+  17645176bb43cac1 3-4,8-12,16-21,25-29,33-36,40,44-48,52-54,58-63
+openspec/changes/simplify-chromium-path-preference/specs/chromium-installer/spec.md
+  aa68f9711e5635b7 1-58
+openspec/changes/simplify-chromium-path-preference/.openspec.yaml
+  17645176bb43cac1 1-2
+openspec/specs/log-viewer/spec.md
+  8b0abc441fe5d55b 1-244
+openspec/changes/archive/2026-04-18-move-installer-to-raycast/tasks.md
+  17645176bb43cac1 1-78
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/README.md
+  17645176bb43cac1 1-3
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/proposal.md
+  17645176bb43cac1 1-36
+openspec/changes/archive/2026-04-18-harden-install-and-launch/design.md
+  17645176bb43cac1 1-210
+openspec/changes/archive/2026-04-18-move-installer-to-raycast/specs/chromium-installer/spec.md
+  17645176bb43cac1 1-92
+openspec/specs/quick-launch/spec.md
+  8b0abc441fe5d55b 6-28,30-32,41-45,48,57-88,114,131,135,137,144-165
+openspec/changes/archive/2026-04-17-broaden-error-visibility/specs/profile-manager/spec.md
+  17645176bb43cac1 1-28
+openspec/changes/archive/2026-04-18-harden-install-and-launch/specs/quick-launch/spec.md
+  17645176bb43cac1 1-54
+openspec/changes/archive/2026-04-17-broaden-error-visibility/specs/error-reporting/spec.md
+  17645176bb43cac1 1-41
+openspec/specs/profile-manager/spec.md
+  8b0abc441fe5d55b 151-174
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/design.md
+  17645176bb43cac1 1-179
+openspec/specs/error-reporting/spec.md
+  17645176bb43cac1 1-45
+openspec/changes/simplify-chromium-path-preference/proposal.md
+  aa68f9711e5635b7 1-33
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/specs/log-viewer/spec.md
+  17645176bb43cac1 1-244
+openspec/changes/archive/2026-04-18-move-installer-to-raycast/proposal.md
+  17645176bb43cac1 1-43
+openspec/changes/archive/2026-04-18-add-chromium-log-viewer/.openspec.yaml
+  17645176bb43cac1 1-2
+.gitleaksignore
+  17645176bb43cac1 25-28
+openspec/specs/chromium-installer/spec.md
+  8b0abc441fe5d55b 6-7,9,11-13,15-18,20-21,23-25,27-64,66-70,72-73,75-79,81-144,146-147,149-155
+  17645176bb43cac1 65,71
+openspec/changes/archive/2026-04-18-move-installer-to-raycast/design.md
+  17645176bb43cac1 1-202
+openspec/changes/simplify-chromium-path-preference/design.md
+  aa68f9711e5635b7 1-115
+openspec/changes/archive/2026-04-17-broaden-error-visibility/.openspec.yaml
+  17645176bb43cac1 1-2
+openspec/changes/archive/2026-04-17-broaden-error-visibility/specs/quick-launch/spec.md
+  17645176bb43cac1 1-57
+openspec/changes/archive/2026-04-18-harden-install-and-launch/specs/chromium-installer/spec.md
+  17645176bb43cac1 1-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "7b5a6b99d5612c30ce1a99e8cd480d56d624e455",
+  "prompts": {
+    "162ac94e18f50858": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e383e537-9f93-4576-bcb1-8754c32377ae",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 463,
+      "overriden_lines": 0
+    },
+    "17645176bb43cac1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a9a0d17c-2f2f-42e8-8935-0714a36cee96",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 1920,
+      "total_deletions": 0,
+      "accepted_lines": 2086,
+      "overriden_lines": 0
+    },
+    "2e5d71e996f72d00": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50ad5e9d-a2c7-4e4f-a896-d1929ebc60b3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 69,
+      "overriden_lines": 0
+    },
+    "33802cdd2cee530b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99debb96-aeba-4720-8080-7fcfb9dde0f9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    },
+    "4f8309d6a5ce0f52": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97e99a42-9eeb-4357-9caf-45634825e2aa",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 154,
+      "overriden_lines": 0
+    },
+    "864bf6fc8d8d6a69": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4d083b62-d5ef-4348-9e43-9ade3611f90c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1163,
+      "overriden_lines": 0
+    },
+    "87031bf42fb0c935": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bbaa6af2-2333-44d3-b86f-9ccb3fce5911",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 754,
+      "overriden_lines": 0
+    },
+    "8b0abc441fe5d55b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe95b0e1-17d3-4ce8-b51a-8627297ca6e0",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 557,
+      "overriden_lines": 0
+    },
+    "aa68f9711e5635b7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52dfff6c-fc75-4059-992d-ecdea105013e",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 522,
+      "overriden_lines": 0
+    },
+    "bc1b101bd29aff4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7aa2d655-03e3-4bd0-bce2-39364c02bf3a",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    },
+    "d0ee2525e759b2d2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a5460d9d-5107-4613-bccc-ed850d01ce29",
+        "model": "kimi-for-coding"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 600,
+      "overriden_lines": 0
+    },
+    "fc142817eabb6d21": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8bd37825-5b19-49ad-84ce-1ed45c852739",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "OnCloud",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 173,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_fed3d72f60d150": {
+      "author": "OnCloud"
+    }
+  }
+}
