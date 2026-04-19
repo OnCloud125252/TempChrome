@@ -14,3 +14,5 @@ export const GOOGLE_ENV = {
 export const ID_CHARSET = "abcdefghijklmnopqrstuvwxyz0123456789";
 export const ID_LENGTH = 10;
 export const MAX_ID_ATTEMPTS = 100;
+
+export const LAUNCH_GRACE_WINDOW_MS = 750;

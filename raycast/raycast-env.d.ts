@@ -8,8 +8,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
-  /** Chromium Path - Absolute path to the Chromium binary */
-  "chromiumPath": string,
+  /** Chromium Install Directory - Directory that contains (or will contain) Chromium.app. The installer places Chromium.app here; launches spawn the binary inside it. */
+  "chromiumInstallDir": string,
   /** Temp Profile Base Directory - Directory where temporary profiles are created */
   "tempBaseDir": string
 }

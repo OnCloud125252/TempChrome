@@ -1,7 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { getChromiumProcessArgs, isProfileInUse } from "../chromium/processes";
+import { mapWithConcurrency } from "../utils/concurrency";
+import { reportError } from "../utils/reportError";
 import { readRegistry } from "./autoCleanup";
+
+const SIZE_COMPUTE_CONCURRENCY = 4;
 
 export type ProfileInfo = {
   id: string;
@@ -56,27 +60,32 @@ export async function listProfiles(tempBaseDir: string): Promise<ProfileInfo[]> 
   const directories = entries.filter((entry) => entry.isDirectory());
   const [psLines, registry] = await Promise.all([getChromiumProcessArgs(), readRegistry()]);
 
-  const profiles: ProfileInfo[] = [];
-  for (const entry of directories) {
-    const profilePath = path.join(tempBaseDir, entry.name);
-    try {
-      const stats = await fs.promises.stat(profilePath);
-      const size = await computeDirectorySize(profilePath);
-      profiles.push({
-        id: entry.name,
-        path: profilePath,
-        size,
-        createdAt: stats.birthtime,
-        inUse: isProfileInUse(profilePath, psLines),
-        autoCleanup: profilePath in registry,
-      });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        console.error("listProfiles: failed to stat", profilePath, error);
+  const results = await mapWithConcurrency(
+    directories,
+    SIZE_COMPUTE_CONCURRENCY,
+    async (entry): Promise<ProfileInfo | undefined> => {
+      const profilePath = path.join(tempBaseDir, entry.name);
+      try {
+        const stats = await fs.promises.stat(profilePath);
+        const size = await computeDirectorySize(profilePath);
+        return {
+          id: entry.name,
+          path: profilePath,
+          size,
+          createdAt: stats.birthtime,
+          inUse: isProfileInUse(profilePath, psLines),
+          autoCleanup: profilePath in registry,
+        };
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          await reportError("Could not read profile directory", error, { silent: true });
+        }
+        return undefined;
       }
-    }
-  }
+    },
+  );
 
+  const profiles = results.filter((profile): profile is ProfileInfo => profile !== undefined);
   profiles.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   return profiles;
 }

@@ -16,7 +16,7 @@ export async function launchWithValues(values: LaunchOptionsValues): Promise<boo
   try {
     const preferences = getPreferences();
 
-    if (!(await chromiumExists(preferences.chromiumPath))) {
+    if (!(await chromiumExists(preferences.binaryPath))) {
       await showFailureToast(new Error("not found"), {
         title: "Chromium not found",
         message: "Run 'Install or Update Chromium' from the TempChrome command to install it.",
@@ -26,8 +26,8 @@ export async function launchWithValues(values: LaunchOptionsValues): Promise<boo
 
     const extraArgs = buildExtraArgs(values);
     const profileDir = await createTempProfile(preferences.tempBaseDir);
-    await clearQuarantine(preferences.chromiumPath);
-    launchChromium(preferences.chromiumPath, profileDir, extraArgs);
+    await clearQuarantine(preferences.appBundlePath);
+    await launchChromium(preferences.binaryPath, profileDir, extraArgs);
 
     if (values.autoCleanup) {
       await markForAutoCleanup(profileDir);
@@ -56,5 +56,6 @@ export async function quickLaunch(): Promise<boolean> {
 }
 
 export default async function Command(): Promise<void> {
+  await showHUD("Launching TempChrome…");
   await quickLaunch();
 }

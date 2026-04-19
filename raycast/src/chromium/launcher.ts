@@ -4,29 +4,35 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { promisify } from "node:util";
 
+import { reportError } from "../utils/reportError";
 import {
   BASE_CHROMIUM_ARGS,
   GOOGLE_ENV,
   ID_CHARSET,
   ID_LENGTH,
+  LAUNCH_GRACE_WINDOW_MS,
   MAX_ID_ATTEMPTS,
 } from "./constants";
 
-const execFileAsync = promisify(execFile);
+export class ChromiumLaunchFailedError extends Error {
+  readonly exitCode: number | null;
+  readonly signal: NodeJS.Signals | null;
 
-export function appBundleFromBinary(binaryPath: string): string {
-  const segments = binaryPath.split("/");
-  for (let index = segments.length - 1; index >= 0; index--) {
-    if (segments[index].endsWith(".app")) {
-      return segments.slice(0, index + 1).join("/");
-    }
+  constructor(exitCode: number | null, signal: NodeJS.Signals | null) {
+    super(
+      `Chromium exited within the launch grace window (exitCode=${exitCode}, signal=${signal})`,
+    );
+    this.name = "ChromiumLaunchFailedError";
+    this.exitCode = exitCode;
+    this.signal = signal;
   }
-  throw new Error(`No .app bundle segment found in path: ${binaryPath}`);
 }
 
-export async function chromiumExists(chromiumPath: string): Promise<boolean> {
+const execFileAsync = promisify(execFile);
+
+export async function chromiumExists(binaryPath: string): Promise<boolean> {
   try {
-    await fs.promises.access(chromiumPath, fs.constants.X_OK);
+    await fs.promises.access(binaryPath, fs.constants.X_OK);
     return true;
   } catch {
     return false;
@@ -62,20 +68,19 @@ export async function createTempProfile(tempBaseDir: string): Promise<string> {
   throw new Error(`Failed to create unique profile directory after ${MAX_ID_ATTEMPTS} attempts`);
 }
 
-export async function clearQuarantine(chromiumPath: string): Promise<void> {
+export async function clearQuarantine(appBundlePath: string): Promise<void> {
   try {
-    const appBundle = appBundleFromBinary(chromiumPath);
-    await execFileAsync("xattr", ["-cr", appBundle]);
+    await execFileAsync("xattr", ["-cr", appBundlePath]);
   } catch (error) {
-    console.error("clearQuarantine failed", error);
+    await reportError("Could not clear Chromium quarantine attributes", error);
   }
 }
 
 export function launchChromium(
-  chromiumPath: string,
+  binaryPath: string,
   profileDir: string,
   extraArgs: string[],
-): void {
+): Promise<void> {
   const logPath = path.join(profileDir, "chrome_debug.log");
   const args = [
     ...BASE_CHROMIUM_ARGS,
@@ -85,10 +90,42 @@ export function launchChromium(
     ...extraArgs,
   ];
   const env = { ...process.env, ...GOOGLE_ENV };
-  const child = spawn(chromiumPath, args, {
-    detached: true,
-    stdio: "ignore",
-    env,
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(binaryPath, args, {
+      detached: true,
+      stdio: "ignore",
+      env,
+    });
+
+    let settled = false;
+
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      child.removeListener("error", onError);
+      reject(new ChromiumLaunchFailedError(code, signal));
+    };
+
+    const onError = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      child.removeListener("exit", onExit);
+      reject(err);
+    };
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.removeListener("exit", onExit);
+      child.removeListener("error", onError);
+      child.unref();
+      resolve();
+    }, LAUNCH_GRACE_WINDOW_MS);
+
+    child.once("exit", onExit);
+    child.once("error", onError);
   });
-  child.unref();
 }

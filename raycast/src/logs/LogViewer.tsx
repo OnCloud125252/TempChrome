@@ -18,6 +18,7 @@ import {
 import { showFailureToast } from "@raycast/utils";
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { readRegistry } from "../profiles/autoCleanup";
+import { reportError } from "../utils/reportError";
 import {
   type BufferedRow,
   collapseConsecutive,
@@ -248,7 +249,9 @@ export default function LogViewer({ profileDir }: LogViewerProps): JSX.Element {
       .then((registry) => {
         if (!cancelled) setCondemned(profileDir in registry);
       })
-      .catch((error) => console.error("readRegistry failed", error));
+      .catch((error) => {
+        void reportError("readRegistry failed", error, { silent: true });
+      });
     return () => {
       cancelled = true;
     };

@@ -79,7 +79,7 @@ export default function RecentLaunchesList(): JSX.Element {
   async function handleCopyCommand(entry: LaunchOptionsValues): Promise<void> {
     const preferences = getPreferences();
     const args = [`--user-data-dir=${preferences.tempBaseDir}/<id>`, ...buildExtraArgs(entry)];
-    const command = [shellQuote(preferences.chromiumPath), ...args.map(shellQuote)].join(" ");
+    const command = [shellQuote(preferences.binaryPath), ...args.map(shellQuote)].join(" ");
     await Clipboard.copy(command);
     await showToast({
       style: Toast.Style.Success,

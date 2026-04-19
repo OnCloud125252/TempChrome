@@ -17,7 +17,8 @@ import { quickLaunch } from "../launch";
 import LogViewer from "../logs/LogViewer";
 import { getPreferences } from "../preferences";
 import { removePath } from "../utils/fs";
-import { readRegistry, sweepStaleProfiles, unmarkAutoCleanup, writeRegistry } from "./autoCleanup";
+import { reportError } from "../utils/reportError";
+import { sweepStaleProfiles, unmarkAutoCleanup, updateRegistry } from "./autoCleanup";
 import { formatBytes, listProfiles, type ProfileInfo } from "./listing";
 
 export default function ProfileList(): JSX.Element {
@@ -34,7 +35,9 @@ export default function ProfileList(): JSX.Element {
           revalidate();
         }
       })
-      .catch((error) => console.error("mount sweep failed", error));
+      .catch((error) => {
+        void reportError("Auto-cleanup sweep failed", error);
+      });
   }, [revalidate]);
 
   async function handleRelaunch(profile: ProfileInfo): Promise<void> {
@@ -43,7 +46,7 @@ export default function ProfileList(): JSX.Element {
       title: `Launching profile ${profile.id}…`,
     });
     try {
-      if (!(await chromiumExists(preferences.chromiumPath))) {
+      if (!(await chromiumExists(preferences.binaryPath))) {
         toast.hide();
         await showFailureToast(new Error("not found"), {
           title: "Chromium not found",
@@ -51,8 +54,8 @@ export default function ProfileList(): JSX.Element {
         });
         return;
       }
-      await clearQuarantine(preferences.chromiumPath);
-      launchChromium(preferences.chromiumPath, profile.path, []);
+      await clearQuarantine(preferences.appBundlePath);
+      await launchChromium(preferences.binaryPath, profile.path, []);
       toast.style = Toast.Style.Success;
       toast.title = `Launched ${profile.id}`;
       toast.message = formatBytes(profile.size);
@@ -151,17 +154,14 @@ export default function ProfileList(): JSX.Element {
     });
     try {
       await Promise.all(idle.map((profile) => removePath(profile.path)));
-      const registry = await readRegistry();
-      let mutated = false;
-      for (const profile of idle) {
-        if (profile.path in registry) {
-          delete registry[profile.path];
-          mutated = true;
+      const idlePaths = new Set(idle.map((profile) => profile.path));
+      await updateRegistry((current) => {
+        const next = { ...current };
+        for (const idlePath of idlePaths) {
+          delete next[idlePath];
         }
-      }
-      if (mutated) {
-        await writeRegistry(registry);
-      }
+        return next;
+      });
 
       toast.style = Toast.Style.Success;
       toast.title = `Deleted ${idle.length} profile(s)`;

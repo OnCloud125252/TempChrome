@@ -226,12 +226,12 @@
   ],
   "preferences": [
     {
-      "name": "chromiumPath",
+      "name": "chromiumInstallDir",
       "type": "textfield",
       "required": false,
-      "title": "Chromium Path",
-      "description": "Absolute path to the Chromium binary",
-      "default": "/Applications/Chromium.app/Contents/MacOS/Chromium"
+      "title": "Chromium Install Directory",
+      "description": "Directory that contains (or will contain) Chromium.app. The installer places Chromium.app here; launches spawn the binary inside it.",
+      "default": "~/Applications"
     },
     {
       "name": "tempBaseDir",

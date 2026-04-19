@@ -1,15 +1,11 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { Action, ActionPanel, Icon, List, popToRoot, showToast, Toast } from "@raycast/api";
-import { showFailureToast } from "@raycast/utils";
 import type { JSX } from "react";
+import InstallView from "./install/InstallView";
 import { launchWithValues } from "./launch";
 import LaunchOptionsForm from "./options/LaunchOptionsForm";
 import RecentLaunchesList from "./options/RecentLaunchesList";
 import { schemaDefaults } from "./options/schema";
 import ProfileList from "./profiles/ProfileList";
-
-const execFileAsync = promisify(execFile);
 
 async function handleLaunch(): Promise<void> {
   const toast = await showToast({
@@ -23,24 +19,6 @@ async function handleLaunch(): Promise<void> {
   } else {
     toast.style = Toast.Style.Failure;
     toast.title = "Launch failed";
-  }
-}
-
-async function handleInstall(): Promise<void> {
-  const toast = await showToast({
-    style: Toast.Style.Animated,
-    title: "Opening Terminal…",
-  });
-  const activateScript = 'tell application "Terminal" to activate';
-  const doScriptScript = 'tell application "Terminal" to do script "tempchrome --install"';
-  try {
-    await execFileAsync("osascript", ["-e", activateScript, "-e", doScriptScript]);
-    toast.style = Toast.Style.Success;
-    toast.title = "Terminal opened";
-    toast.message = "Running `tempchrome --install`";
-  } catch (error) {
-    toast.hide();
-    await showFailureToast(error, { title: "Could not open Terminal" });
   }
 }
 
@@ -109,15 +87,15 @@ export default function Command(): JSX.Element {
       <List.Item
         icon={Icon.Download}
         title="Install or Update Chromium…"
-        subtitle="Runs `tempchrome --install` in Terminal"
+        subtitle="Download and install the latest Chromium snapshot"
         accessories={[{ tag: "⌘I" }]}
         actions={
           <ActionPanel>
-            <Action
-              title="Open Terminal"
-              icon={Icon.Terminal}
+            <Action.Push
+              title="Install"
+              icon={Icon.Download}
               shortcut={{ modifiers: ["cmd"], key: "i" }}
-              onAction={handleInstall}
+              target={<InstallView />}
             />
           </ActionPanel>
         }

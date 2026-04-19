@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import { StringDecoder } from "node:string_decoder";
 
+import { reportError } from "../utils/reportError";
 import { parseChromiumLog, type LogRow } from "./parser";
 
 const POLL_INTERVAL_MS = 250;
@@ -58,14 +59,14 @@ export function createTailer(options: TailerOptions): TailerHandle {
       if (code === "ENOENT") {
         return null;
       }
-      console.error("tailer read failed", error);
+      await reportError("Log tail read failed", error, { silent: true });
       return null;
     } finally {
       if (handle) {
         try {
           await handle.close();
         } catch (error) {
-          console.error("tailer handle close failed", error);
+          await reportError("Log tail handle close failed", error, { silent: true });
         }
       }
     }
@@ -126,7 +127,7 @@ export function createTailer(options: TailerOptions): TailerHandle {
           onStateChange({ fileMissing: true });
           return;
         }
-        console.error("tailer tick failed", error);
+        await reportError("Log tail stat failed", error, { silent: true });
         return;
       }
 
