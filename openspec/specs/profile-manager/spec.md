@@ -12,7 +12,7 @@ The system SHALL expose "Manage Temp Profiles…" as a `List.Item` inside the `T
 - **AND** the list SHALL be reachable via back-navigation (ESC) back to the TempChrome List
 
 ### Requirement: List displays every subdirectory of the temp base directory
-The system SHALL, on mount and on every refresh, enumerate subdirectories of `tempBaseDir` and render one `List.Item` per subdirectory. Items SHALL be sorted by `fs.stat.birthtime` descending (newest first).
+The system SHALL, on mount and on every refresh, enumerate subdirectories of `tempBaseDir` and render one `List.Item` per subdirectory. Items SHALL be sorted by `fs.stat.birthtime` descending (newest first). Directory sizes for the `subtitle` accessory SHALL be computed in parallel with a concurrency cap of `4` concurrent `computeDirectorySize` walks, so that a user with many profiles does not wait for sequential disk walks. Stat and walk failures on individual profiles SHALL flow through `reportError(..., { silent: true })` and SHALL cause only the failing profile to be skipped — the remaining profiles SHALL still render.
 
 #### Scenario: Profiles exist
 - **WHEN** `tempBaseDir` contains at least one subdirectory
@@ -26,6 +26,17 @@ The system SHALL, on mount and on every refresh, enumerate subdirectories of `te
 - **WHEN** `tempBaseDir` is empty or does not exist
 - **THEN** the system SHALL render `<List.EmptyView>` with `title: "No temporary profiles found"` and `description: "Launch TempChrome to create one."`
 - **AND** the EmptyView SHALL include a single `Action` titled `"Launch TempChrome"` that performs a quick-launch and triggers a list refresh
+
+#### Scenario: Sizes are computed in parallel
+- **WHEN** the list enumerates `N >= 8` profile directories
+- **THEN** at most `4` `computeDirectorySize` walks SHALL be in flight at any moment
+- **AND** the total wall-clock time for size computation SHALL be bounded by approximately `ceil(N / 4) * median(single-profile walk time)` (not `N * median`)
+
+#### Scenario: A single profile's stat failure does not abort the list
+- **WHEN** listing encounters an error other than `ENOENT` while stat'ing one profile directory
+- **THEN** the failing profile SHALL be omitted from the rendered list
+- **AND** `reportError("Could not read profile directory", error, { silent: true })` SHALL be invoked
+- **AND** the remaining profiles SHALL still render
 
 ### Requirement: In-use detection runs once per refresh via `ps`
 The system SHALL detect which profiles are currently in use by running `execFile("ps", ["-Ao", "args="])` exactly once per list refresh (not once per item) and then checking each profile path against the `ps` output.
@@ -136,4 +147,28 @@ The system SHALL provide an action on the list's `ActionPanel` that trashes ever
 - **AND** the sweep deletes zero profiles (either because the registry is empty or all registered profiles are still in use)
 - **THEN** the system SHALL show a toast with `title: "Nothing to clean up"` and `message: "No stale auto-cleanup profiles found."`
 - **AND** revalidate the list
+
+## ADDED Requirements
+
+### Requirement: Each profile list item exposes a "View Log" action
+The system SHALL attach a "View Log" `Action.Push` to the `ActionPanel` of every `List.Item` rendered by the Manage Temp Profiles list. The action SHALL push the `LogViewer` component (from the `log-viewer` capability) with `profileDir` set to the absolute path of the profile directory for that row. The action SHALL bind shortcut `{ modifiers: ["cmd"], key: "l" }`.
+
+#### Scenario: Action is present on every row
+- **WHEN** the Manage Temp Profiles list renders any `List.Item` for a profile subdirectory
+- **THEN** the item's `ActionPanel` SHALL include an `Action.Push` titled `"View Log"` with `icon: Icon.Document` (or the closest equivalent)
+- **AND** the action SHALL declare `shortcut={{ modifiers: ["cmd"], key: "l" }}`
+- **AND** its `target` prop SHALL be `<LogViewer profileDir={profile.path} />`
+
+#### Scenario: Action is present regardless of whether the log file exists
+- **WHEN** the profile directory does not contain a `chrome_debug.log` file (for example, for profiles created before this change shipped)
+- **THEN** the "View Log" action SHALL still appear in the ActionPanel
+- **AND** selecting it SHALL push the `LogViewer`, which SHALL surface the "No log file found" state per the `log-viewer` capability
+
+### Requirement: "View Log" shortcut is advertised via accessories
+The system SHALL add a tag accessory to each profile `List.Item`'s `accessories` array containing `{ tag: "⌘L" }` (in addition to any existing accessories such as in-use status and date). This advertises the shortcut without requiring the user to open the ⌘K action panel.
+
+#### Scenario: Accessory is present
+- **WHEN** the Manage Temp Profiles list renders a `List.Item`
+- **THEN** the item's `accessories` SHALL include an accessory object `{ tag: "⌘L" }`
+- **AND** this accessory SHALL appear in addition to (not replacing) the existing "In use" tag accessory when applicable and the date accessory
 

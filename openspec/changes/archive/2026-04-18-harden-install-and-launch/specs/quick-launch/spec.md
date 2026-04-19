@@ -1,0 +1,54 @@
+## MODIFIED Requirements
+
+### Requirement: No-view command launches Chromium with a fresh temporary profile
+The system SHALL expose a Raycast command named "Launch TempChrome" with `mode: "no-view"` that creates a new temporary profile directory, spawns Chromium with that profile, observes the spawned process for an early-crash grace window, triggers the opportunistic auto-cleanup sweep, and shows a HUD. The command SHALL render no Raycast UI beyond the HUD (with the exception of the failure toast produced by an early-crash detection, described below). The same behavior SHALL also be reachable as the "Launch Now" action inside the `TempChrome` List command.
+
+During the grace window the command SHALL await the result of `launchChromium(...)`. Callers SHALL show an animated `Toast` / `HUD` state (e.g. `"Launching TempChrome…"`) before awaiting and transition to the success or failure state based on the returned promise. `launchChromium` SHALL resolve successfully if the spawned Chromium child is still alive when the grace window elapses, and SHALL reject if the child emits `exit` (with any code) or `error` during the window.
+
+#### Scenario: Successful quick launch
+- **WHEN** the user invokes "Launch TempChrome" (or triggers the "Launch Now" action inside the TempChrome List command)
+- **THEN** the system SHALL read `chromiumPath` and `tempBaseDir` from extension preferences
+- **AND** verify that the file at `chromiumPath` is accessible with `fs.constants.X_OK`
+- **AND** ensure the directory at `tempBaseDir` exists with mode `0o700` (creating it if necessary)
+- **AND** create a new directory at `<tempBaseDir>/<id>` where `<id>` is a 10-character string drawn from `a-z0-9`, with mode `0o700`
+- **AND** clear macOS quarantine attributes on the Chromium `.app` bundle via `execFile("xattr", ["-cr", <appBundlePath>])`, swallowing any error
+- **AND** spawn Chromium via `child_process.spawn(chromiumPath, args, { detached: true, stdio: "ignore", env })`
+- **AND** observe the child for `exit` and `error` events for a grace window of `750` ms
+- **AND** if the child is still alive at the end of the window, call `child.unref()` and resolve the launch promise
+- **AND** the `args` passed to `spawn` SHALL be `["--disable-fre", "--no-first-run", "--no-default-browser-check", "--new-window", "--user-data-dir=<profileDir>", "--enable-logging", "--log-file=<profileDir>/chrome_debug.log", ...extraArgs]`
+- **AND** the `env` passed to `spawn` SHALL be `{ ...process.env, GOOGLE_API_KEY: "AIzaSyCkfPOPZXDKNn8hhgu3JrA62wIgC93d44k", GOOGLE_DEFAULT_CLIENT_ID: "811574891467.apps.googleusercontent.com", GOOGLE_DEFAULT_CLIENT_SECRET: "kdloedMFGdGla2P1zacGjAQh" }`
+- **AND** invoke the opportunistic auto-cleanup sweep as a fire-and-forget async call (see separate requirement)
+- **AND** show a HUD with text `"Launched"` (or the richer HUD produced by `launchWithValues`)
+
+#### Scenario: Chromium binary missing
+- **WHEN** the user invokes "Launch TempChrome"
+- **AND** the file at `chromiumPath` is not accessible (does not exist, is not a regular file, or lacks execute permission)
+- **THEN** the system SHALL call `showFailureToast` with title `"Chromium not found"` and message `"Run 'Install or Update Chromium' from the TempChrome command to install it."`
+- **AND** SHALL NOT create any temp profile directory
+- **AND** SHALL NOT spawn any process
+
+#### Scenario: Chromium crashes inside the grace window
+- **WHEN** the user invokes "Launch TempChrome"
+- **AND** the spawned child emits `exit` with code `1` within `750` ms
+- **THEN** `launchChromium` SHALL reject with a typed `ChromiumLaunchFailedError` whose message includes the exit code and (if captured) exit signal
+- **AND** the caller SHALL call `showFailureToast` with title `"Launch failed"`
+- **AND** the caller SHALL NOT show the success HUD
+- **AND** the created temp profile directory SHALL remain on disk (no automatic cleanup in the failure path)
+
+#### Scenario: Chromium spawn error
+- **WHEN** the user invokes "Launch TempChrome"
+- **AND** the spawned child emits `error` (e.g. `ENOENT` at exec time) within the grace window
+- **THEN** `launchChromium` SHALL reject with the underlying error
+- **AND** the caller SHALL call `showFailureToast` with title `"Launch failed"`
+
+#### Scenario: Chromium is still alive at the end of the grace window
+- **WHEN** the spawned child has not emitted `exit` or `error` `750` ms after spawn
+- **THEN** the `exit` and `error` listeners SHALL be removed
+- **AND** `child.unref()` SHALL be called
+- **AND** `launchChromium` SHALL resolve successfully
+
+#### Scenario: Caller shows a loading state during the grace window
+- **WHEN** the user invokes "Launch Now" from the root `TempChrome` List view
+- **THEN** the caller SHALL call `showToast({ style: Toast.Style.Animated, title: "Launching TempChrome…" })` before awaiting `launchWithValues(...)`
+- **AND** upon a resolved promise, the animated toast SHALL be hidden and replaced with the success HUD (or hidden if the caller uses `popToRoot`)
+- **AND** upon a rejected promise, the caller SHALL transition the toast to `Toast.Style.Failure` with title `"Launch failed"`

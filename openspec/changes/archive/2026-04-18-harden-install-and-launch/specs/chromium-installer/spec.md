@@ -1,46 +1,4 @@
-# chromium-installer Specification
-
-## Purpose
-TBD - created by archiving change raycast-extension. Update Purpose after archive.
-## Requirements
-### Requirement: Install action pushes an in-extension Detail view
-The system SHALL expose "Install or Update Chromium…" as a `List.Item` inside the `TempChrome` List command. Its primary action SHALL be an `Action.Push` whose `target` is the `<InstallView />` component. No Terminal.app, AppleScript, `osascript`, or external shell is invoked for the install flow.
-
-#### Scenario: Primary action pushes InstallView
-- **WHEN** the user triggers the primary action on "Install or Update Chromium…" in the TempChrome List
-- **THEN** the system SHALL push the `<InstallView />` component via Raycast's `Action.Push`
-- **AND** SHALL NOT call `execFile("osascript", ...)` or any subprocess named `osascript`, `open`, or `Terminal`
-- **AND** SHALL NOT display a HUD or success toast prior to the install starting
-
-#### Scenario: Shortcut is advertised via accessories
-- **WHEN** the TempChrome List renders the "Install or Update Chromium…" item
-- **THEN** the item's `accessories` SHALL include `{ tag: "⌘I" }`
-- **AND** the `Action.Push` SHALL declare `shortcut={{ modifiers: ["cmd"], key: "i" }}`
-
-### Requirement: Install runs entirely inside the Raycast extension process
-The install pipeline SHALL execute inside the Raycast extension's Node/Bun process. It SHALL perform: revision lookup via `fetch`, streaming zip download via `fetch` + `fs.createWriteStream`, extraction via `/usr/bin/unzip` subprocess, existing-bundle removal via `fs.promises.rm`, new-bundle placement via `fs.rename` (with `fs.cp` + `fs.rm` fallback on `EXDEV`), quarantine clearing via `/usr/bin/xattr` subprocess, and tmp cleanup via `fs.promises.rm`. No `osascript` call is made at any point of the install flow.
-
-#### Scenario: Subprocess usage is limited to unzip and xattr
-- **WHEN** the install pipeline runs end-to-end
-- **THEN** the only `child_process.spawn` / `execFile` calls the pipeline makes SHALL be to `/usr/bin/unzip` (exactly once for extraction), to `/usr/bin/xattr` (exactly once for quarantine clearing), and to whatever process-listing primitive `isChromiumBinaryRunning()` uses internally (`ps`) to detect running Chromium instances.
-
-#### Scenario: Partial download safety
-- **WHEN** the streaming download is interrupted (network error, user cancel, process kill)
-- **THEN** no file named `chrome-mac.zip` (without the `.part` suffix) SHALL remain in `os.tmpdir()`
-- **AND** the final path `appBundlePath` SHALL remain unchanged (either still the previous bundle or still absent)
-
-### Requirement: Install target is derived from the `chromiumPath` preference
-The install pipeline SHALL compute the destination `.app` bundle path by calling `appBundleFromBinary(prefs.chromiumPath)`. It SHALL NOT hardcode `/Applications/Chromium.app`. The parent directory of the derived `.app` bundle SHALL be created recursively via `fs.mkdir({ recursive: true })` if it does not already exist.
-
-#### Scenario: Default preference produces `~/Applications/Chromium.app`
-- **WHEN** the user has not set a custom `chromiumPath` in Raycast Preferences
-- **AND** the user's home directory is `/Users/alice`
-- **THEN** the install SHALL write the new app bundle to `/Users/alice/Applications/Chromium.app`
-- **AND** SHALL create `/Users/alice/Applications/` if it does not already exist
-
-#### Scenario: Custom preference overrides install location
-- **WHEN** the user has set `chromiumPath` to `/Applications/Chromium.app/Contents/MacOS/Chromium` in Raycast Preferences
-- **THEN** the install SHALL write the new app bundle to `/Applications/Chromium.app`
+## MODIFIED Requirements
 
 ### Requirement: Install refuses to run when Chromium is running at the target binary
 Before the swap step, and again immediately before deleting any existing `.app` at the target path, the pipeline SHALL call `isChromiumBinaryRunning(prefs.chromiumPath)`. The implementation SHALL match the configured `chromiumPath` against each `ps` line using a path-prefix comparison that tolerates install paths containing spaces (e.g. `/Applications/My Chromium.app/Contents/MacOS/Chromium`); it SHALL NOT use `line.split(/\s+/)[0]` or any other strategy that assumes the executable path contains no spaces. If `isChromiumBinaryRunning` returns `true`, the pipeline SHALL throw a typed `ChromiumRunningError` and the `InstallView` SHALL render a failure toast titled `"Chromium is running"` with a message directing the user to quit Chromium and try again. No files under the target `.app` bundle SHALL be modified.
@@ -69,29 +27,7 @@ Before the swap step, and again immediately before deleting any existing `.app` 
 - **THEN** `isChromiumBinaryRunning` SHALL return `false`
 - **AND** the install pipeline SHALL proceed
 
-### Requirement: Install reports live progress and is cancellable
-The `<InstallView />` component SHALL render a `<Detail>` showing the current stage (`resolve-revision` / `download` / `extract` / `preflight` / `swap` / `xattr` / `cleanup` / `done`) and, during the `download` stage, a progress bar and byte counts. Progress state updates SHALL be throttled so `setState` is called at most when the stage changes OR when `bytesDownloaded` has advanced ≥ 1 % of `bytesTotal` OR when ≥ 250 ms have elapsed since the last update, whichever comes first. The `ActionPanel` SHALL expose a **Cancel** action bound to `⌘.` while the install is in progress. Activating Cancel SHALL call `abortController.abort()`; the pipeline SHALL respond by throwing `AbortedError` at its next `await` boundary and SHALL run its cleanup `finally` block.
-
-#### Scenario: Progress bar reflects bytes downloaded
-- **WHEN** the install is in the `download` stage
-- **AND** `bytesTotal` is a known positive number
-- **THEN** the rendered markdown SHALL include a fixed-width 20-character bar of `▓` and `░` characters whose filled segment count is `floor(20 * bytesDownloaded / bytesTotal)`
-- **AND** the text `"<mb>.<tenth> / <total>.<tenth> MB"` SHALL appear next to the bar
-
-#### Scenario: Cancel during download
-- **WHEN** the install is in the `download` stage
-- **AND** the user triggers the Cancel action (⌘.)
-- **THEN** `abortController.abort()` SHALL be called
-- **AND** the in-flight `fetch` SHALL reject with a `DOMException` of name `"AbortError"`, which the pipeline SHALL rewrap as `AbortedError`
-- **AND** `showFailureToast` SHALL be called with `{ title: "Install cancelled" }`
-- **AND** the `.part` temp file SHALL be removed by the pipeline's `finally` block
-
-#### Scenario: Cancel during extraction
-- **WHEN** the install is in the `extract` stage
-- **AND** the user triggers the Cancel action
-- **THEN** the `unzip` child process SHALL be killed via `.kill()`
-- **AND** the partially-extracted tmp directory SHALL be removed
-- **AND** the target `.app` bundle SHALL remain unchanged
+## ADDED Requirements
 
 ### Requirement: Download resumes across interrupted installs via HTTP Range
 The installer SHALL keep the in-flight `.part` file on the filesystem when an install is aborted or fails before the rename step, and SHALL resume the next install attempt by issuing a `Range: bytes=N-` request to the snapshot URL, where `N` is the current size in bytes of the existing `.part` file. The `.part` filename SHALL encode the platform (`Mac` or `Mac_Arm`) and revision so that a moved `LAST_CHANGE` naturally invalidates stale parts. On startup of a fresh install, the pipeline SHALL prune any part files in `os.tmpdir()` matching the install's prefix but targeting a different platform or revision. The `.part` file SHALL only be deleted when the install completes successfully (after the rename to the final `.zip` path).
