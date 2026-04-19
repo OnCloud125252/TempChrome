@@ -26,8 +26,8 @@ TempChrome is a macOS shell utility that launches Chromium with temporary, isola
 ## Important Notes
 
 - Use `bun` for JavaScript/TypeScript development (e.g., Raycast extension) to leverage its speed and built-in features
-- **macOS-only** — the script uses macOS-specific paths (`/Applications/`, `xattr`, `open`) and architecture detection
+- **macOS-only** — uses macOS-specific tooling (`xattr`, `open`) and architecture detection (`process.arch === "arm64"` → `Mac_Arm`, else `Mac`)
 - Chromium profiles are created in `/tmp/tempchrome_profile/` with random IDs
 - Every launch writes `<profileDir>/chrome_debug.log` via `--enable-logging=stderr --log-file=…`; the Raycast extension's Manage Temp Profiles list exposes a live log viewer at ⌘L
-- The install target downloads from Google's official Chromium snapshot storage
+- The Raycast extension's **Install or Update Chromium…** command downloads from Google's official Chromium snapshot storage and installs to the directory configured by the `chromiumInstallDir` preference (default `~/Applications`; bundle is always `Chromium.app`). The `cli/tempchrome.sh` script no longer carries an install subcommand.
 - `GOOGLE_API_KEY`, `GOOGLE_DEFAULT_CLIENT_ID`, and `GOOGLE_DEFAULT_CLIENT_SECRET` are required for the browser's Google features (e.g., Gemini, sync). These keys originate from **Debian's Chromium package** (not Chromium's source tree — Chromium ships without keys). They are already publicly visible in Debian's package sources, but note that Google's API ToS technically prohibits redistribution. The keys date from 2014 and may be outdated for some services

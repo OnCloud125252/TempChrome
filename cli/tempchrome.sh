@@ -1,9 +1,7 @@
 #!/bin/bash
 
 # TempChrome - Temporary Profile Launcher
-# Source: Official Chromium snapshots (storage.googleapis.com/chromium-browser-snapshots)
-# Usage: tempchrome [--install | --auto-cleanup] [chromium-arguments]
-# Example: tempchrome --install
+# Usage: tempchrome [--auto-cleanup] [chromium-arguments]
 # Example: tempchrome --incognito --disable-extensions
 # Example: tempchrome --auto-cleanup --incognito
 
@@ -41,81 +39,6 @@ set -e  # Exit on any error
 # Configuration
 CHROMIUM_PATH="/Applications/Chromium.app/Contents/MacOS/Chromium"
 TEMP_BASE_DIR="/tmp/tempchrome_profile"
-SNAPSHOT_BASE_URL="https://storage.googleapis.com/chromium-browser-snapshots"
-
-# Function to detect macOS architecture for snapshot downloads
-detect_arch() {
-  case "$(uname -m)" in
-    arm64) echo "Mac_Arm" ;;
-    *)     echo "Mac" ;;
-  esac
-}
-
-# Function to install/update Chromium from official snapshots
-install_chromium() {
-  local platform
-  platform="$(detect_arch)"
-  local tmp_zip="/tmp/chromium-snapshot.zip"
-  local tmp_extract="/tmp/chromium-install"
-
-  echo -e "${CYAN}${INFO}${NC} ${CYAN}Detected architecture:${NC} ${BOLD}${platform}${NC}"
-
-  # Fetch latest revision
-  echo -e "${BLUE}${INFO}${NC} ${BLUE}Fetching latest snapshot revision...${NC}"
-  local revision
-  revision=$(curl -sf "${SNAPSHOT_BASE_URL}/${platform}/LAST_CHANGE")
-  if [[ -z "$revision" ]]; then
-    echo -e "${RED}${CROSS}${NC} ${RED}Failed to fetch latest revision from snapshot server${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}${CHECK}${NC} ${GREEN}Latest revision:${NC} ${BOLD}${revision}${NC}"
-
-  # Download
-  local download_url="${SNAPSHOT_BASE_URL}/${platform}/${revision}/chrome-mac.zip"
-  echo -e "${BLUE}${INFO}${NC} ${BLUE}Downloading Chromium snapshot...${NC}"
-  echo -e "${CYAN}   ${download_url}${NC}"
-  if ! curl -L --progress-bar -o "$tmp_zip" "$download_url"; then
-    echo -e "${RED}${CROSS}${NC} ${RED}Download failed${NC}"
-    rm -f "$tmp_zip"
-    exit 1
-  fi
-
-  # Extract
-  echo -e "${BLUE}${INFO}${NC} ${BLUE}Extracting...${NC}"
-  rm -rf "$tmp_extract"
-  if ! unzip -o -q "$tmp_zip" -d "$tmp_extract"; then
-    echo -e "${RED}${CROSS}${NC} ${RED}Extraction failed${NC}"
-    rm -f "$tmp_zip"
-    rm -rf "$tmp_extract"
-    exit 1
-  fi
-
-  # Verify extracted app exists
-  if [[ ! -d "$tmp_extract/chrome-mac/Chromium.app" ]]; then
-    echo -e "${RED}${CROSS}${NC} ${RED}Chromium.app not found in extracted archive${NC}"
-    rm -f "$tmp_zip"
-    rm -rf "$tmp_extract"
-    exit 1
-  fi
-
-  # Move existing Chromium.app to trash if present
-  if [[ -d "/Applications/Chromium.app" ]]; then
-    echo -e "${YELLOW}${WARN}${NC} ${YELLOW}Moving existing Chromium.app to trash...${NC}"
-    trash "/Applications/Chromium.app"
-  fi
-
-  # Install
-  mv "$tmp_extract/chrome-mac/Chromium.app" /Applications/
-  xattr -cr /Applications/Chromium.app
-
-  # Cleanup
-  rm -f "$tmp_zip"
-  rm -rf "$tmp_extract"
-
-  echo -e "${GREEN}${CHECK}${NC} ${GREEN}Chromium installed successfully${NC} (revision ${BOLD}${revision}${NC})"
-  echo -e "${CYAN}${INFO}${NC} ${CYAN}Location:${NC} ${BOLD}/Applications/Chromium.app${NC}"
-  exit 0
-}
 
 # Function to print a full-width line
 print_divider() {
@@ -134,12 +57,10 @@ usage() {
     echo -e "  ${WHITE}tempchrome${NC} ${GREEN}[options]${NC} ${GREEN}[chromium-arguments...]${NC}"
     echo ""
     echo -e "${YELLOW}${BOLD}OPTIONS${NC}"
-    echo -e "  ${WHITE}--install, --update${NC}   Download and install latest Chromium from official snapshots"
     echo -e "  ${WHITE}--auto-cleanup${NC}        Automatically delete temp profile after Chromium closes"
     echo -e "  ${WHITE}-h, --help${NC}            Show this help message"
     echo ""
     echo -e "${YELLOW}${BOLD}EXAMPLES${NC}"
-    echo -e "  ${WHITE}tempchrome --install${NC}                    ${BLUE}Install/update Chromium${NC}"
     echo -e "  ${WHITE}tempchrome${NC}                              ${BLUE}Launch with temporary profile${NC}"
     echo -e "  ${WHITE}tempchrome --auto-cleanup${NC}               ${BLUE}Launch and cleanup after exit${NC}"
     echo -e "  ${WHITE}tempchrome --incognito${NC}                  ${BLUE}Launch in incognito mode${NC}"
@@ -172,9 +93,6 @@ CHROMIUM_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --install|--update)
-            install_chromium
-            ;;
         --auto-cleanup)
             AUTO_CLEANUP=1
             shift
@@ -192,7 +110,7 @@ done
 # Check if Chromium exists
 if [[ ! -f "$CHROMIUM_PATH" ]]; then
     echo -e "${RED}${CROSS}${NC} ${RED}Chromium not found at${NC} ${CYAN}${BOLD}$CHROMIUM_PATH${NC}"
-    echo -e "${CYAN}${INFO}${NC} ${CYAN}Install with:${NC} ${WHITE}${BOLD}tempchrome --install${NC}"
+    echo -e "${CYAN}${INFO}${NC} ${CYAN}Install Chromium via the Raycast command 'Install or Update Chromium…' in the TempChrome extension.${NC}"
     echo -e "${YELLOW}${WARN}${NC} ${YELLOW}Note: Homebrew 'chromium' cask is deprecated as of September 2026${NC}"
     exit 1
 fi

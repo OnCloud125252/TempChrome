@@ -67,30 +67,22 @@ Everything after TempChrome's own flags gets forwarded to Chromium.
 
 ## Install and Update Chromium
 
-TempChrome can download the latest Chromium directly from Google's official snapshot storage — no Homebrew needed.
+Installing and updating Chromium is handled entirely by the Raycast extension. Open the **TempChrome** command in Raycast and select **Install or Update Chromium…** (`⌘I`). The extension fetches the latest snapshot from Google's official storage, streams it to disk, extracts it, clears macOS quarantine attributes, and swaps it into place — all inside the Raycast process with a live progress bar and a `⌘.` cancel action.
 
-```bash
-tempchrome --install
-```
+By default, the new bundle is installed to `~/Applications/Chromium.app` so it does not collide with any pre-existing `/Applications/Chromium.app` you may have installed for other purposes. If you would rather use `/Applications/Chromium.app`, open the extension's preferences and change **Chromium Install Directory** to `/Applications` before running the install command — the installer places `Chromium.app` inside whatever directory the preference points at, and launches spawn the binary from that bundle.
 
-This fetches the latest snapshot, extracts it, clears macOS quarantine attributes, and installs to `/Applications/Chromium.app`. If an existing installation is found, it's moved to trash first.
+> **Note (preference rename):** the old `chromiumPath` preference has been renamed to `chromiumInstallDir`, and the new default is the enclosing directory (`~/Applications`) rather than the full binary path. Users who customised the old preference must re-set the new preference once after updating.
 
-Run the same command to update:
-
-```bash
-tempchrome --update
-```
-
-`--install` and `--update` are interchangeable.
+Run the same command again at any time to update to the latest snapshot. The installer refuses to run while a matching Chromium process is still open, so quit any TempChrome-launched windows first.
 
 ### Architecture Support
 
-Architecture is auto-detected:
+Architecture is auto-detected by the Raycast installer:
 
 | Chip | Platform ID | Detected via |
 |------|-------------|--------------|
-| Apple Silicon (M1/M2/M3/M4) | `Mac_Arm` | `uname -m` → `arm64` |
-| Intel | `Mac` | `uname -m` → anything else |
+| Apple Silicon (M1/M2/M3/M4) | `Mac_Arm` | `process.arch === "arm64"` |
+| Intel | `Mac` | anything else |
 
 ## How It Works
 
@@ -144,11 +136,7 @@ ln -s "$(pwd)/cli/tempchrome.sh" /usr/local/bin/tempchrome
 cp cli/tempchrome.sh /usr/local/bin/tempchrome
 ```
 
-1. Install Chromium:
-
-```bash
-tempchrome --install
-```
+1. Install Chromium via the Raycast extension — open **TempChrome** in Raycast and run **Install or Update Chromium…** (`⌘I`). See [Install and Update Chromium](#install-and-update-chromium) for details on the default install path and how to change it.
 
 ## Development
 
