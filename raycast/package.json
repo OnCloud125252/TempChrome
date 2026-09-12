@@ -17,6 +17,7 @@
     "publish": "ray publish",
     "prepare": "node scripts/prepare.mjs",
     "sync:options": "bun scripts/sync-options-schema.ts",
+    "icon": "bash scripts/render-icon.sh",
     "prebuild": "bun run sync:options",
     "predev": "bun run sync:options",
     "prelint": "bun run sync:options",
