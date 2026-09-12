@@ -1,6 +1,8 @@
 # TempChrome (Raycast)
 
-> **Icon note**: `assets/icon.png` is generated, not hand-edited. The source art is `scripts/icon.svg` (indigo gradient backdrop, three white arcs around a white core). Edit the SVG, then run `bun run icon` to re-render the 512×512 PNG. The script needs `rsvg-convert` (`brew install librsvg`).
+> This file documents `raycast/`. It lives in `docs/` on purpose: `ray publish` copies the whole `raycast/` folder into the Raycast monorepo, so nothing dev-only may sit inside it.
+
+> **Icon note**: `raycast/assets/icon.png` is generated, not hand-edited. The source art is `tools/icon.svg` (indigo gradient backdrop, three white arcs around a white core). Edit the SVG, then run `bash tools/render-icon.sh` to re-render the 512×512 PNG. The script needs `rsvg-convert` (`brew install librsvg`).
 
 Raycast extension for launching Chromium with temporary, isolated profiles. Two top-level commands:
 
@@ -22,9 +24,7 @@ Additionally, every `<List>` / `<Form>` sets `navigationTitle` and uses `searchB
 
 ## Development
 
-This extension uses [Bun](https://bun.sh) as its package manager and runner. Use `bun`, not `npm`, for every command below.
-
-`package-lock.json` is the one exception. `ray publish` rejects an extension that has no npm lockfile, so the repo carries both `bun.lock` and `package-lock.json`. Do not delete `package-lock.json`. After any dependency change, refresh it with `npm install --package-lock-only` so it stays in step with `bun.lock`.
+This extension uses [Bun](https://bun.sh) as its package manager and runner for local work.
 
 ```sh
 bun install        # install dependencies
@@ -34,6 +34,12 @@ bun run lint:fix   # ray lint --fix
 bun run build      # ray build -e dist
 bun run publish    # ray publish (requires a registered Raycast Store handle)
 ```
+
+### Two rules that keep publishing green
+
+**1. No bun inside `raycast/`.** The Raycast CI runs `npm ci` and `npm run build` on a machine with no bun. A `pre*` lifecycle script that shells out to bun fails that CI with `sh: bun: command not found`. So `raycast/package.json` lists only the five `ray` commands above, with no `pre*` hooks and no `prepare`. Repo tooling lives in `tools/` and the git hooks call it.
+
+**2. Keep `package-lock.json`.** `ray publish` rejects an extension with no npm lockfile, so the repo carries both `bun.lock` and `package-lock.json`. Do not delete it. After any dependency change, refresh it with `npm install --package-lock-only` so it stays in step with `bun.lock`.
 
 ## Source Layout
 
@@ -93,7 +99,7 @@ Extension-level (shared by all commands, top section of the Raycast preferences(
 
 Launch options (5 fields: `browsingMode`, `disableWebSecurity`, `disableExtensions`, `autoCleanup`, `customArgs`) are defined once in `src/options/schema.ts` and surfaced in **two independent places**:
 
-- **Quick Launch TempChrome** command-level preferences(prefs) — rendered by Raycast in the preferences(prefs) pane, persistent across runs. Generated into `package.json` by `scripts/sync-options-schema.ts`; **do not hand-edit** the `launch.preferences` block in package.json.
+- **Quick Launch TempChrome** command-level preferences(prefs) — rendered by Raycast in the preferences(prefs) pane, persistent across runs. Generated into `package.json` by `tools/sync-options-schema.ts`; **do not hand-edit** the `launch.preferences` block in package.json.
 - **Launch with Options** form (inside the `tempchrome` view command) — React `<Form>` built by iterating `LAUNCH_OPTIONS_SCHEMA`. Values reset to schema defaults every time the form opens; submit values do not write back to the preferences(prefs) pane.
 
 The two surfaces share the **same UI definitions and the same flag-mapping** (`buildExtraArgs` in `src/options/schema.ts`), but hold **independent values**.
@@ -101,6 +107,6 @@ The two surfaces share the **same UI definitions and the same flag-mapping** (`b
 ### Adding / editing a launch option
 
 1. Edit `src/options/schema.ts` — append / modify a `LAUNCH_OPTIONS_SCHEMA` entry and, if the value shape changes, update the `LaunchOptionsValues` type.
-2. Run any of `bun run dev` / `bun run lint` / `bun run lint:fix` / `bun run build` — the `pre-` hooks automatically invoke `bun run sync:options`, which rewrites `launch.preferences` in package.json. `ray lint` then regenerates `raycast-env.d.ts` so the TS types line up.
-3. **Stage both files together** — `src/options/schema.ts` *and* `raycast/package.json`. The repo's `.githooks/pre-commit` runs `sync:options` via `ray lint --fix` and will abort the commit if `raycast/package.json` still has unstaged changes afterward; `.githooks/pre-push` enforces the same invariant against `HEAD` so drift never reaches the remote.
+2. Run `bun tools/sync-options-schema.ts` from the repo root. It rewrites `launch.preferences` in `raycast/package.json`. Then run `bun run lint` so `ray lint` regenerates `raycast-env.d.ts` and the TS types line up. The git hooks run step 2 for you, so you can also just commit.
+3. **Stage both files together** — `raycast/src/options/schema.ts` *and* `raycast/package.json`. `.githooks/pre-commit` runs `sync-options-schema.ts` and aborts the commit if `raycast/package.json` still has unstaged changes afterward; `.githooks/pre-push` enforces the same invariant against `HEAD` so drift never reaches the remote.
 4. The React form picks up the new field on next render (no manual JSX change needed).

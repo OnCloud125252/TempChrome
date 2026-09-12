@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_SVG="${SCRIPT_DIR}/icon.svg"
-OUTPUT_PNG="${SCRIPT_DIR}/../assets/icon.png"
+OUTPUT_PNG="${SCRIPT_DIR}/../raycast/assets/icon.png"
 ICON_SIZE=512
 
 if ! command -v rsvg-convert >/dev/null 2>&1; then

@@ -15,7 +15,8 @@ TempChrome is a macOS shell utility that launches Chromium with temporary, isola
 ## Project Structure
 
 - `tempchrome.sh` — core launcher script (~261 lines)
-- `raycast/` — planned Raycast extension (active development target)
+- `raycast/` — Raycast extension (active development target). Ships as-is to the Raycast monorepo, so keep dev-only files out. See `docs/raycast-extension.md`.
+- `tools/` — repo tooling that must not ship inside the extension
 - `cli/` — placeholder for future CLI wrapper
 - `.claude/skills/` — Claude Code skills (raycast-extension already exists)
 

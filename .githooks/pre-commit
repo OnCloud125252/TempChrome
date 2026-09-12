@@ -128,11 +128,14 @@ check_raycast_lint() {
     return 0
   fi
 
-  (cd raycast && bun run lint:fix)
+  # raycast/package.json deliberately carries no bun pre-hooks: `ray publish`
+  # ships that file to the Raycast monorepo, whose CI runs npm without bun.
+  # Regenerate the manifest here instead.
+  bun tools/sync-options-schema.ts && (cd raycast && bun run lint:fix)
 }
 
 check_raycast_schema_sync() {
-  # `prelint:fix` already ran `bun run sync:options` inside step 3, so
+  # Step 3 already ran sync-options-schema.ts, so
   # raycast/package.json's launch.preferences block is now up to date in
   # the working tree. If it differs from the staged version, the user
   # edited src/options/schema.ts without staging the regenerated

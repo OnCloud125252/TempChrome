@@ -142,13 +142,14 @@ cp cli/tempchrome.sh /usr/local/bin/tempchrome
 
 ### Git Hooks
 
-TempChrome ships a set of git hooks under `.githooks/` that enforce secret scanning, shell-script linting, and Raycast-extension build integrity. They activate automatically the first time you run `bun install` inside `raycast/`:
+TempChrome ships a set of git hooks under `.githooks/` that enforce secret scanning, shell-script linting, and Raycast-extension build integrity. Turn them on once per clone:
 
 ```bash
+git config core.hooksPath .githooks
 (cd raycast && bun install)
 ```
 
-That runs `raycast/scripts/prepare.mjs`, which sets `core.hooksPath` to `.githooks` in your local git config. Confirm with:
+Confirm with:
 
 ```bash
 git config --get core.hooksPath   # → .githooks
@@ -156,8 +157,8 @@ git config --get core.hooksPath   # → .githooks
 
 | Hook         | What it runs                                                                            |
 |--------------|-----------------------------------------------------------------------------------------|
-| `pre-commit` | `gitleaks` (staged) · `shellcheck` (staged `.sh`) · `ray lint --fix` (re-stages fixes)  |
-| `pre-push`   | `gitleaks` (push range) · `shellcheck` (all tracked `.sh`) · `ray lint` · `ray build`   |
+| `pre-commit` | `gitleaks` (staged) · `shellcheck` (staged `.sh`) · `sync-options-schema` · `ray lint --fix` (re-stages fixes) |
+| `pre-push`   | `gitleaks` (push range) · `shellcheck` (all tracked `.sh`) · `sync-options-schema` · `ray lint` · `ray build`   |
 | `post-merge` | `bun install` inside `raycast/` when `raycast/bun.lock` or `raycast/package.json` moved |
 
 `ray build` also performs a full TypeScript compile, so it doubles as the typecheck gate.
@@ -171,6 +172,20 @@ These tools are referenced by the hooks. They're optional — the hooks warn and
 ```bash
 brew install gitleaks    # secret scanner used by pre-commit & pre-push
 brew install shellcheck  # shell linter used by pre-commit & pre-push
+brew install librsvg     # rsvg-convert, used by tools/render-icon.sh
 ```
+
+### Repo Tooling
+
+`tools/` holds scripts that support development but must never ship inside the
+extension. `ray publish` copies the whole `raycast/` folder, and the Raycast CI
+runs npm without bun, so no bun script may live under `raycast/`.
+
+```bash
+bun tools/sync-options-schema.ts   # regenerate launch.preferences in raycast/package.json
+bash tools/render-icon.sh          # re-render raycast/assets/icon.png from tools/icon.svg
+```
+
+The git hooks run `sync-options-schema.ts` for you before every lint.
 
 Bun is required to work on the Raycast extension. Install via [bun.sh](https://bun.sh) or `brew install oven-sh/bun/bun`.

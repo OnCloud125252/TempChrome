@@ -136,7 +136,10 @@ check_shellcheck_all() {
 }
 
 check_raycast_lint() {
-  (cd raycast && bun run lint)
+  # raycast/package.json deliberately carries no bun pre-hooks: `ray publish`
+  # ships that file to the Raycast monorepo, whose CI runs npm without bun.
+  # Regenerate the manifest here instead.
+  bun tools/sync-options-schema.ts && (cd raycast && bun run lint)
 }
 
 check_raycast_build() {
@@ -144,7 +147,7 @@ check_raycast_build() {
 }
 
 check_raycast_schema_sync() {
-  # `prelint` + `prebuild` already ran `bun run sync:options`, so the
+  # Step 3 already ran sync-options-schema.ts, so the
   # working tree's raycast/package.json reflects the latest schema. If
   # it differs from HEAD, the committed launch.preferences block is
   # stale — block the push so drift can't reach the remote.

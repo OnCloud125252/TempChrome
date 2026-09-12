@@ -1,8 +1,12 @@
 #!/usr/bin/env bun
 /**
- * Regenerates the `launch` command's `preferences` block in package.json from
- * the shared schema in src/launchOptionsSchema.ts. Wired into prelint / predev
- * / prebuild so every Raycast command sees an up-to-date manifest.
+ * Regenerates the `launch` command's `preferences` block in
+ * raycast/package.json from the shared schema in
+ * raycast/src/options/schema.ts.
+ *
+ * This lives outside raycast/ on purpose. `ray publish` copies the whole
+ * extension folder, and the Raycast CI runs npm without bun, so no bun
+ * script may sit inside raycast/. The git hooks call this instead.
  *
  * Idempotent — running it twice produces identical output.
  */
@@ -15,10 +19,10 @@ import {
 	isArgField,
 	LAUNCH_OPTIONS_SCHEMA,
 	type ArgField,
-} from "../src/options/schema";
+} from "../raycast/src/options/schema";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const pkgPath = resolve(scriptDir, "..", "package.json");
+const pkgPath = resolve(scriptDir, "..", "raycast", "package.json");
 
 type ManifestPreference = Record<string, unknown>;
 
