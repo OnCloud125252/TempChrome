@@ -433,6 +433,8 @@ export default function InstallView(): JSX.Element {
             <Action
               title="Cancel"
               icon={Icon.Stop}
+              // Common.Pin is also cmd+period, but this is the macOS cancel gesture, not a pin.
+              // eslint-disable-next-line @raycast/prefer-common-shortcut
               shortcut={{ modifiers: ["cmd"], key: "." }}
               onAction={handleCancel}
             />
@@ -449,6 +451,8 @@ export default function InstallView(): JSX.Element {
               <Action
                 title="Close"
                 icon={Icon.XMarkCircle}
+                // Common.Pin is also cmd+period, but this dismisses the view, it does not pin.
+                // eslint-disable-next-line @raycast/prefer-common-shortcut
                 shortcut={{ modifiers: ["cmd"], key: "." }}
                 onAction={handleClose}
               />

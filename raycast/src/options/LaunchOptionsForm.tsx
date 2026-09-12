@@ -7,6 +7,7 @@ import {
   showToast,
   Toast,
   useNavigation,
+  Keyboard,
 } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 import { Fragment, type JSX, useState } from "react";
@@ -144,7 +145,7 @@ export default function LaunchOptionsForm(props: LaunchOptionsFormProps = {}): J
           <Action.SubmitForm
             title="Copy Chromium Command"
             icon={Icon.Clipboard}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+            shortcut={Keyboard.Shortcut.Common.Copy}
             onSubmit={handleCopyCommand}
           />
           <Action

@@ -7,6 +7,7 @@ import {
   popToRoot,
   showToast,
   Toast,
+  Keyboard,
 } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 import { type JSX, useEffect, useState } from "react";
@@ -119,7 +120,7 @@ export default function RecentLaunchesList(): JSX.Element {
               <Action
                 title="Copy Chromium Command"
                 icon={Icon.Clipboard}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                shortcut={Keyboard.Shortcut.Common.Copy}
                 onAction={() => handleCopyCommand(entry)}
               />
               <Action

@@ -62,6 +62,9 @@ export default function Command(): JSX.Element {
             <Action.Push
               title="Open"
               icon={Icon.Clock}
+              // Common.Refresh is also cmd+R, but this opens a list, it does not refresh one.
+              // The row advertises this exact key through its accessory tag.
+              // eslint-disable-next-line @raycast/prefer-common-shortcut
               shortcut={{ modifiers: ["cmd"], key: "r" }}
               target={<RecentLaunchesList />}
             />

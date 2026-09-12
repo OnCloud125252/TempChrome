@@ -14,6 +14,7 @@ import {
   showInFinder,
   showToast,
   Toast,
+  Keyboard,
 } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -39,8 +40,14 @@ const execFileAsync = promisify(execFile);
 
 const BUFFER_MAX = 2000;
 const PROFILE_POLL_INTERVAL_MS = 2000;
-const SEVERITY_FILTERS = ["all", "ERROR", "WARNING", "INFO", "RAW"] as const;
-type SeverityFilter = (typeof SEVERITY_FILTERS)[number];
+const SEVERITY_FILTERS = [
+  { value: "all", title: "All" },
+  { value: "ERROR", title: "Errors" },
+  { value: "WARNING", title: "Warnings" },
+  { value: "INFO", title: "Info" },
+  { value: "RAW", title: "Raw" },
+] as const;
+type SeverityFilter = (typeof SEVERITY_FILTERS)[number]["value"];
 
 type TailerState =
   | "INIT"
@@ -405,7 +412,7 @@ export default function LogViewer({ profileDir }: LogViewerProps): JSX.Element {
             <Action
               title="Save Buffer to Downloads…"
               icon={Icon.SaveDocument}
-              shortcut={{ modifiers: ["cmd"], key: "s" }}
+              shortcut={Keyboard.Shortcut.Common.Save}
               onAction={saveBuffer}
             />
           </ActionPanel>
@@ -475,11 +482,9 @@ export default function LogViewer({ profileDir }: LogViewerProps): JSX.Element {
       value={severityFilter}
       onChange={(value) => setSeverityFilter(value as SeverityFilter)}
     >
-      <List.Dropdown.Item title="All" value="all" />
-      <List.Dropdown.Item title="Errors" value="ERROR" />
-      <List.Dropdown.Item title="Warnings" value="WARNING" />
-      <List.Dropdown.Item title="Info" value="INFO" />
-      <List.Dropdown.Item title="Raw" value="RAW" />
+      {SEVERITY_FILTERS.map((filter) => (
+        <List.Dropdown.Item key={filter.value} title={filter.title} value={filter.value} />
+      ))}
     </List.Dropdown>
   );
 
@@ -579,16 +584,17 @@ export default function LogViewer({ profileDir }: LogViewerProps): JSX.Element {
                   <Action
                     title="Copy with Context"
                     icon={Icon.CopyClipboard}
-                    shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                    shortcut={Keyboard.Shortcut.Common.Copy}
                     onAction={() => void copyWithContext(display)}
                   />
                   <Action
                     title="Save Buffer to Downloads…"
                     icon={Icon.SaveDocument}
-                    shortcut={{ modifiers: ["cmd"], key: "s" }}
+                    shortcut={Keyboard.Shortcut.Common.Save}
                     onAction={saveBuffer}
                   />
                   <Action
+                    // eslint-disable-next-line @raycast/prefer-title-case
                     title={dedupe ? "Toggle Dedup Off" : "Toggle Dedup On"}
                     icon={Icon.LineChart}
                     shortcut={{ modifiers: ["cmd"], key: "d" }}
@@ -604,7 +610,7 @@ export default function LogViewer({ profileDir }: LogViewerProps): JSX.Element {
                     <Action
                       title="Reveal in Finder"
                       icon={Icon.Finder}
-                      shortcut={{ modifiers: ["cmd", "shift"], key: "o" }}
+                      shortcut={Keyboard.Shortcut.Common.OpenWith}
                       onAction={() => void revealInFinder()}
                     />
                   ) : null}

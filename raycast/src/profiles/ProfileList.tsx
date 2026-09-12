@@ -9,6 +9,7 @@ import {
   popToRoot,
   showToast,
   Toast,
+  Keyboard,
 } from "@raycast/api";
 import { showFailureToast, usePromise } from "@raycast/utils";
 import { type JSX, useEffect } from "react";
@@ -230,7 +231,6 @@ export default function ProfileList(): JSX.Element {
           actions={
             <ActionPanel>
               <Action
-                // eslint-disable-next-line @raycast/prefer-title-case
                 title="Launch TempChrome"
                 icon={Icon.Rocket}
                 onAction={handleQuickLaunchFromEmpty}
@@ -238,7 +238,7 @@ export default function ProfileList(): JSX.Element {
               <Action
                 title="Refresh"
                 icon={Icon.ArrowClockwise}
-                shortcut={{ modifiers: ["cmd"], key: "r" }}
+                shortcut={Keyboard.Shortcut.Common.Refresh}
                 onAction={handleRefresh}
               />
             </ActionPanel>
@@ -286,19 +286,16 @@ export default function ProfileList(): JSX.Element {
                   shortcut={{ modifiers: ["cmd"], key: "l" }}
                   target={<LogViewer profileDir={profile.path} />}
                 />
-                <Action.ShowInFinder
-                  path={profile.path}
-                  shortcut={{ modifiers: ["cmd"], key: "o" }}
-                />
+                <Action.ShowInFinder path={profile.path} shortcut={Keyboard.Shortcut.Common.Open} />
                 <Action.CopyToClipboard
                   title="Copy Path"
                   content={profile.path}
-                  shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                  shortcut={Keyboard.Shortcut.Common.Copy}
                 />
                 <Action
                   title="Refresh List"
                   icon={Icon.ArrowClockwise}
-                  shortcut={{ modifiers: ["cmd"], key: "r" }}
+                  shortcut={Keyboard.Shortcut.Common.Refresh}
                   onAction={handleRefresh}
                 />
                 <Action
