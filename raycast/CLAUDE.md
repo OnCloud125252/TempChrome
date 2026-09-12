@@ -22,7 +22,9 @@ Additionally, every `<List>` / `<Form>` sets `navigationTitle` and uses `searchB
 
 ## Development
 
-This extension uses [Bun](https://bun.sh) as its package manager and runner. npm is not supported.
+This extension uses [Bun](https://bun.sh) as its package manager and runner. Use `bun`, not `npm`, for every command below.
+
+`package-lock.json` is the one exception. `ray publish` rejects an extension that has no npm lockfile, so the repo carries both `bun.lock` and `package-lock.json`. Do not delete `package-lock.json`. After any dependency change, refresh it with `npm install --package-lock-only` so it stays in step with `bun.lock`.
 
 ```sh
 bun install        # install dependencies
