@@ -1,6 +1,6 @@
 # TempChrome (Raycast)
 
-> **Icon note**: The final icon should be an indigo (`#4F46E5`) background with a white globe+stopwatch glyph, 512×512 PNG. A solid-color PNG placeholder is acceptable until the final art is ready. Place the file at `raycast/assets/icon.png`.
+> **Icon note**: `assets/icon.png` is generated, not hand-edited. The source art is `scripts/icon.svg` (indigo gradient backdrop, three white arcs around a white core). Edit the SVG, then run `bun run icon` to re-render the 512×512 PNG. The script needs `rsvg-convert` (`brew install librsvg`).
 
 Raycast extension for launching Chromium with temporary, isolated profiles. Two top-level commands:
 
